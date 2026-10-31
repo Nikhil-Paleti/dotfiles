@@ -131,11 +131,36 @@ else
     sudo -n apt-get install -y "${deps[@]}" ca-certificates
   fi
 fi
-scratch=$(mktemp -d)
-trap 'rm -rf "$scratch"; [[ -z "${stage:-}" ]] || rm -rf "$stage"' EXIT
+# Never consume inherited temporary-path variables. Cleanup is limited to
+# directories allocated here and bearing this process's ownership marker.
+_dotfiles_download_dir=''
+_dotfiles_stage_dir=''
+readonly _dotfiles_cleanup_owner="$$:$RANDOM:$RANDOM"
+_dotfiles_remove_owned() {
+  local owned_dir="$1"
+  if [[ -n "$owned_dir" && -d "$owned_dir" && ! -L "$owned_dir" &&
+        -f "$owned_dir/.dotfiles-installer-owner" && ! -L "$owned_dir/.dotfiles-installer-owner" ]] &&
+     [[ "$(cat "$owned_dir/.dotfiles-installer-owner")" == "$_dotfiles_cleanup_owner" ]]; then
+    rm -rf -- "$owned_dir"
+  fi
+  return 0
+}
+_dotfiles_cleanup() {
+  local saved_status=$?
+  trap - EXIT
+  _dotfiles_remove_owned "$_dotfiles_download_dir"
+  _dotfiles_remove_owned "$_dotfiles_stage_dir"
+  exit "$saved_status"
+}
+trap _dotfiles_cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+_dotfiles_download_dir=$(mktemp -d)
+readonly _dotfiles_download_dir
+printf '%s\n' "$_dotfiles_cleanup_owner" > "$_dotfiles_download_dir/.dotfiles-installer-owner"
 if ! have brew; then
-  curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh -o "$scratch/homebrew.sh"
-  NONINTERACTIVE=1 /bin/bash "$scratch/homebrew.sh"
+  curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh -o "$_dotfiles_download_dir/homebrew.sh"
+  NONINTERACTIVE=1 /bin/bash "$_dotfiles_download_dir/homebrew.sh"
   for prefix in /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
     if [[ -x "$prefix/bin/brew" ]]; then export PATH="$prefix/bin:$prefix/sbin:$PATH"; break; fi
   done
@@ -161,14 +186,16 @@ if ! have codex; then
 fi
 if [[ ! -e "$config" && ! -L "$config" ]]; then
   mkdir -p "$(dirname "$config")"
-  stage=$(mktemp -d "${config}.install.XXXXXX")
-  git clone --depth 1 https://github.com/LazyVim/starter "$stage/nvim"
+  _dotfiles_stage_dir=$(mktemp -d "${config}.install.XXXXXX")
+  readonly _dotfiles_stage_dir
+  printf '%s\n' "$_dotfiles_cleanup_owner" > "$_dotfiles_stage_dir/.dotfiles-installer-owner"
+  git clone --depth 1 https://github.com/LazyVim/starter "$_dotfiles_stage_dir/nvim"
   # Sync against temporary config, using the normal nvim data/cache directories.
   # Failures leave the destination absent; retry reuses downloaded plugin data.
-  XDG_CONFIG_HOME="$stage" NVIM_APPNAME=nvim nvim --headless '+Lazy! sync' +qa
+  XDG_CONFIG_HOME="$_dotfiles_stage_dir" NVIM_APPNAME=nvim nvim --headless '+Lazy! sync' +qa
   # Atomically publish a completed config, refusing even concurrent collisions.
   # renameat2(RENAME_NOREPLACE) on Linux; renamex_np(RENAME_EXCL) on macOS.
-  python3 - "$stage/nvim" "$config" <<'PYTHON'
+  python3 - "$_dotfiles_stage_dir/nvim" "$config" <<'PYTHON'
 import ctypes
 import os
 import sys
