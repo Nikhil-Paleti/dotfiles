@@ -10,7 +10,6 @@
 # Nerd Fonts/terminal settings, conda, OrbStack, and language extras are out of scope.
 # Sources: https://www.lazyvim.org/ https://www.lazyvim.org/installation
 # https://docs.brew.sh/Installation https://docs.brew.sh/Homebrew-on-Linux
-# https://github.com/openai/codex
 set -euo pipefail
 mode=check
 case "${1:---check}" in
@@ -46,8 +45,6 @@ for prefix in /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
   fi
 done
 fi
-# Discover a standalone Codex before deciding whether to install another copy.
-export PATH="$PATH:$HOME/.local/bin"
 # Reuse tools already installed by Mason instead of installing duplicate copies.
 mason_bin="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/mason/bin"
 [[ ! -d "$mason_bin" ]] || export PATH="$PATH:$mason_bin"
@@ -72,7 +69,7 @@ requirements=(git:git curl:curl tmux:tmux nvim:neovim rg:ripgrep fd:fd
   npm:node zsh:zsh stylua:stylua shfmt:shfmt shellcheck:shellcheck)
 missing=0
 printf '%-24s %s\n' COMPONENT STATUS
-for item in "${requirements[@]}" codex:codex; do
+for item in "${requirements[@]}"; do
   cmd=${item%%:*}
   if have "$cmd"; then
     if version_ok "$cmd"; then
@@ -283,18 +280,6 @@ else
 fi
 block_end zsh-syntax-highlighting
 ##### end zsh-syntax-highlighting install #####
-##### Codex CLI install #####
-block_start "Codex CLI"
-if ! have codex; then
-  # The current official cask supports macOS/Linux. Unlike the standalone shell
-  # installer it does not add PATH blocks to profiles or offer to launch Codex.
-  brew install --cask codex
-  have codex || { echo 'Codex unavailable after cask install; resolve PATH conflicts.' >&2; exit 1; }
-else
-  echo 'Already present; skipped.'
-fi
-block_end "Codex CLI"
-##### end Codex CLI install #####
 ##### LazyVim install #####
 block_start LazyVim
 if [[ ! -e "$config" && ! -L "$config" ]]; then
@@ -333,7 +318,6 @@ block_end LazyVim
 ##### end LazyVim install #####
 printf '\nProvisioning finished. Existing configurations were preserved.\n'
 printf 'Homebrew PATH for future shells: eval "$(%s shellenv)"\n' "$(command -v brew)"
-echo 'Codex may also require $HOME/.local/bin on PATH. Sign in manually using codex.'
 echo 'Zsh plugins are installed, not enabled; shell dotfiles will be a separate PR.'
 echo 'Choose a Nerd Font in your terminal for icons; fonts/terminal settings are not changed.'
 echo 'Start nvim and run :LazyHealth; language extras and Mason tools remain feature-specific.'
