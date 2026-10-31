@@ -51,6 +51,11 @@ with tempfile.TemporaryDirectory() as tmp:
  assert (victim/'keep').read_text()=='untouched' 
  p=run('--install');assert p.returncode==0;assert log.read_text()=='install tmux\n'
  p=run('--check');assert p.returncode==0
+ # A Mason-only tool must be discovered before check.sh reports availability.
+ mason=home/'.local/share/nvim/mason/bin';mason.mkdir(parents=True)
+ (b/'stylua').rename(mason/'stylua')
+ p=run('--check');assert p.returncode==0,(p.stdout,p.stderr)
+ assert 'stylua                   present' in p.stdout
  for name in profiles:assert (home/name).read_text()=='UNCHANGED-'+name
  # Interrupted sync must not publish an incomplete config; rerun must retry.
  keep.unlink();(home/'.config/nvim').rmdir();(r/'fail-sync').touch()

@@ -17,6 +17,7 @@ esac
 # remain available across steps. Invoke this entry point, not modules directly.
 source "$DOTFILES_ROOT/scripts/lib/common.sh"
 source "$DOTFILES_ROOT/scripts/platform.sh"
+source "$DOTFILES_ROOT/scripts/discover.sh"
 source "$DOTFILES_ROOT/scripts/check.sh"
 source "$DOTFILES_ROOT/scripts/preflight.sh"
 source "$DOTFILES_ROOT/scripts/install/prerequisites.sh"

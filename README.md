@@ -18,7 +18,8 @@ Every component prints matching `##### ... install #####` start/end markers.
 | File | Responsibility |
 | --- | --- |
 | `install.sh` | Parse arguments and run modules in dependency order. |
-| `scripts/platform.sh` | Validate OS/architecture; discover Homebrew and Mason tools. |
+| `scripts/platform.sh` | Validate OS and architecture. |
+| `scripts/discover.sh` | Find existing Homebrew and Mason tools before availability checks. |
 | `scripts/check.sh` | Report present/missing components; stop in check-only mode. |
 | `scripts/preflight.sh` | Close stdin and refuse incompatible existing Git/Neovim. |
 | `scripts/lib/common.sh` | Shared command/version checks and component output. |
