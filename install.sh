@@ -115,6 +115,8 @@ for cmd in git nvim; do
     exit 1
   fi
 done
+##### Build prerequisites install #####
+printf '\n##### Build prerequisites install #####\n'
 if [[ "$os" == Darwin ]]; then
   if ! xcode-select -p >/dev/null 2>&1 || ! have cc || ! have make; then
     echo 'Installing Apple command-line tools requires its GUI. Run xcode-select --install, finish, then rerun.' >&2
@@ -131,6 +133,8 @@ else
     sudo -n apt-get install -y "${deps[@]}" ca-certificates
   fi
 fi
+printf '##### end Build prerequisites install #####\n'
+##### end Build prerequisites install #####
 # Never consume inherited temporary-path variables. Cleanup is limited to
 # directories allocated here and bearing this process's ownership marker.
 _dotfiles_download_dir=''
@@ -158,6 +162,8 @@ trap 'exit 143' TERM
 _dotfiles_download_dir=$(mktemp -d)
 readonly _dotfiles_download_dir
 printf '%s\n' "$_dotfiles_cleanup_owner" > "$_dotfiles_download_dir/.dotfiles-installer-owner"
+##### Homebrew install #####
+printf '\n##### Homebrew install #####\n'
 if ! have brew; then
   curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh -o "$_dotfiles_download_dir/homebrew.sh"
   NONINTERACTIVE=1 /bin/bash "$_dotfiles_download_dir/homebrew.sh"
@@ -166,24 +172,131 @@ if ! have brew; then
   done
 fi
 have brew || { echo 'Homebrew unavailable after installation.' >&2; exit 1; }
+printf '##### end Homebrew install #####\n'
+##### end Homebrew install #####
 # Homebrew can install dependencies of these packages. It does not configure zsh.
 export NONINTERACTIVE=1 HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_UPGRADE=1
-for item in "${requirements[@]}"; do
-  cmd=${item%%:*}; formula=${item#*:}
-  if ! have "$cmd"; then
-    brew install "$formula"
-    have "$cmd" || { echo "$cmd is not on PATH after install; resolve package-manager conflicts and retry." >&2; exit 1; }
+block_start() { printf '\n##### %s install #####\n' "$1"; }
+block_end() { printf '##### end %s install #####\n' "$1"; }
+install_tool() {
+  local label="$1" command_name="$2" formula_name="$3"
+  block_start "$label"
+  if have "$command_name"; then
+    echo 'Already present; skipped.'
+  else
+    brew install "$formula_name"
+    have "$command_name" || { echo "$command_name is not on PATH after install; resolve package-manager conflicts and retry." >&2; exit 1; }
   fi
-done
-for formula in zsh-autosuggestions zsh-completions zsh-syntax-highlighting; do
-  [[ -d "$(brew --prefix)/share/$formula" ]] || brew install "$formula"
-done
+  block_end "$label"
+}
+
+##### Git install #####
+install_tool "Git" git git
+##### end Git install #####
+
+##### curl install #####
+install_tool "curl" curl curl
+##### end curl install #####
+
+##### tmux install #####
+install_tool "tmux" tmux tmux
+##### end tmux install #####
+
+##### Neovim install #####
+install_tool "Neovim" nvim neovim
+##### end Neovim install #####
+
+##### ripgrep install #####
+install_tool "ripgrep" rg ripgrep
+##### end ripgrep install #####
+
+##### fd install #####
+install_tool "fd" fd fd
+##### end fd install #####
+
+##### lazygit install #####
+install_tool "lazygit" lazygit lazygit
+##### end lazygit install #####
+
+##### fzf install #####
+install_tool "fzf" fzf fzf
+##### end fzf install #####
+
+##### Tree-sitter CLI install #####
+install_tool "Tree-sitter CLI" tree-sitter tree-sitter
+##### end Tree-sitter CLI install #####
+
+##### Python 3 install #####
+install_tool "Python 3" python3 python
+##### end Python 3 install #####
+
+##### Node.js install #####
+install_tool "Node.js" node node
+##### end Node.js install #####
+
+##### npm install #####
+install_tool "npm" npm node
+##### end npm install #####
+
+##### zsh install #####
+install_tool "zsh" zsh zsh
+##### end zsh install #####
+
+##### StyLua install #####
+install_tool "StyLua" stylua stylua
+##### end StyLua install #####
+
+##### shfmt install #####
+install_tool "shfmt" shfmt shfmt
+##### end shfmt install #####
+
+##### ShellCheck install #####
+install_tool "ShellCheck" shellcheck shellcheck
+##### end ShellCheck install #####
+
+##### zsh-autosuggestions install #####
+block_start zsh-autosuggestions
+if [[ -d "$(brew --prefix)/share/zsh-autosuggestions" ]]; then
+  echo 'Already present; skipped.'
+else
+  brew install zsh-autosuggestions
+fi
+block_end zsh-autosuggestions
+##### end zsh-autosuggestions install #####
+
+##### zsh-completions install #####
+block_start zsh-completions
+if [[ -d "$(brew --prefix)/share/zsh-completions" ]]; then
+  echo 'Already present; skipped.'
+else
+  brew install zsh-completions
+fi
+block_end zsh-completions
+##### end zsh-completions install #####
+
+##### zsh-syntax-highlighting install #####
+block_start zsh-syntax-highlighting
+if [[ -d "$(brew --prefix)/share/zsh-syntax-highlighting" ]]; then
+  echo 'Already present; skipped.'
+else
+  brew install zsh-syntax-highlighting
+fi
+block_end zsh-syntax-highlighting
+##### end zsh-syntax-highlighting install #####
+##### Codex CLI install #####
+block_start "Codex CLI"
 if ! have codex; then
   # The current official cask supports macOS/Linux. Unlike the standalone shell
   # installer it does not add PATH blocks to profiles or offer to launch Codex.
   brew install --cask codex
   have codex || { echo 'Codex unavailable after cask install; resolve PATH conflicts.' >&2; exit 1; }
+else
+  echo 'Already present; skipped.'
 fi
+block_end "Codex CLI"
+##### end Codex CLI install #####
+##### LazyVim install #####
+block_start LazyVim
 if [[ ! -e "$config" && ! -L "$config" ]]; then
   mkdir -p "$(dirname "$config")"
   _dotfiles_stage_dir=$(mktemp -d "${config}.install.XXXXXX")
@@ -216,6 +329,8 @@ PYTHON
 else
   echo 'Preserved existing Neovim config and plugins. No sync or replacement performed.'
 fi
+block_end LazyVim
+##### end LazyVim install #####
 printf '\nProvisioning finished. Existing configurations were preserved.\n'
 printf 'Homebrew PATH for future shells: eval "$(%s shellenv)"\n' "$(command -v brew)"
 echo 'Codex may also require $HOME/.local/bin on PATH. Sign in manually using codex.'
