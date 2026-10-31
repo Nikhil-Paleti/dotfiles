@@ -3,7 +3,8 @@
 # Usage: bash install.sh --check | --install
 # --check is the default: no writes, downloads, or package-manager operations.
 # --install uses Homebrew; Debian/Ubuntu also use apt for bootstrap dependencies.
-# Requires network; sudo may be requested by apt/Homebrew. Run as your normal user.
+# Requires network; pre-authorized sudo may be needed. No interactive prompts.
+# Run as your normal user; provision Apple command-line tools separately.
 # Existing tools/config are retained. No login, chsh, shell-file edits, or upgrades.
 # Fresh LazyVim gets upstream starter + plugin sync; existing config is never run.
 # Nerd Fonts/terminal settings, conda, OrbStack, and language extras are out of scope.
@@ -45,6 +46,8 @@ for prefix in /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
   fi
 done
 fi
+# Discover a standalone Codex before deciding whether to install another copy.
+export PATH="$PATH:$HOME/.local/bin"
 # Reuse tools already installed by Mason instead of installing duplicate copies.
 mason_bin="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/mason/bin"
 [[ ! -d "$mason_bin" ]] || export PATH="$PATH:$mason_bin"
@@ -102,6 +105,8 @@ if [[ "$mode" == check ]]; then
   echo 'Existing Neovim config is not inspected/executed; plugin health is not verified.'
   exit "$missing"
 fi
+# Do not let child installers read terminal input. Privilege failures stop the run.
+exec </dev/null
 # An installed but too-old editor/Git may belong to another manager. Do not
 # silently upgrade or replace it; let the owner choose how to resolve it.
 for cmd in git nvim; do
@@ -122,22 +127,22 @@ else
   done
   if [[ ${#deps[@]} -gt 0 ]]; then
     have sudo || { echo 'sudo is required for missing Linux bootstrap packages.' >&2; exit 1; }
-    sudo apt-get update
-    sudo apt-get install -y "${deps[@]}" ca-certificates
+    sudo -n apt-get update
+    sudo -n apt-get install -y "${deps[@]}" ca-certificates
   fi
 fi
 scratch=$(mktemp -d)
-trap 'rm -rf "$scratch"' EXIT
+trap 'rm -rf "$scratch"; [[ -z "${stage:-}" ]] || rm -rf "$stage"' EXIT
 if ! have brew; then
   curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh -o "$scratch/homebrew.sh"
-  /bin/bash "$scratch/homebrew.sh"
+  NONINTERACTIVE=1 /bin/bash "$scratch/homebrew.sh"
   for prefix in /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
     if [[ -x "$prefix/bin/brew" ]]; then export PATH="$prefix/bin:$prefix/sbin:$PATH"; break; fi
   done
 fi
 have brew || { echo 'Homebrew unavailable after installation.' >&2; exit 1; }
 # Homebrew can install dependencies of these packages. It does not configure zsh.
-export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_UPGRADE=1
+export NONINTERACTIVE=1 HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_UPGRADE=1
 for item in "${requirements[@]}"; do
   cmd=${item%%:*}; formula=${item#*:}
   if ! have "$cmd"; then
@@ -149,20 +154,38 @@ for formula in zsh-autosuggestions zsh-completions zsh-syntax-highlighting; do
   [[ -d "$(brew --prefix)/share/$formula" ]] || brew install "$formula"
 done
 if ! have codex; then
-  # Official standalone installer avoids npm global permission changes.
-  curl -fsSL https://chatgpt.com/codex/install.sh -o "$scratch/codex.sh"
-  sh "$scratch/codex.sh"
-  export PATH="$HOME/.local/bin:$PATH"
-  have codex || { echo 'Codex installed but not on PATH; follow installer instructions.' >&2; exit 1; }
+  # The current official cask supports macOS/Linux. Unlike the standalone shell
+  # installer it does not add PATH blocks to profiles or offer to launch Codex.
+  brew install --cask codex
+  have codex || { echo 'Codex unavailable after cask install; resolve PATH conflicts.' >&2; exit 1; }
 fi
 if [[ ! -e "$config" && ! -L "$config" ]]; then
-  # Clone in a temporary directory first. mkdir refuses a concurrent collision.
-  git clone --depth 1 https://github.com/LazyVim/starter "$scratch/nvim"
   mkdir -p "$(dirname "$config")"
-  mkdir "$config"
-  cp -R "$scratch/nvim/." "$config/"
-  # Bootstrap the fresh starter only; existing user config is never executed.
-  NVIM_APPNAME=nvim nvim --headless '+Lazy! sync' +qa
+  stage=$(mktemp -d "${config}.install.XXXXXX")
+  git clone --depth 1 https://github.com/LazyVim/starter "$stage/nvim"
+  # Sync against temporary config, using the normal nvim data/cache directories.
+  # Failures leave the destination absent; retry reuses downloaded plugin data.
+  XDG_CONFIG_HOME="$stage" NVIM_APPNAME=nvim nvim --headless '+Lazy! sync' +qa
+  # Atomically publish a completed config, refusing even concurrent collisions.
+  # renameat2(RENAME_NOREPLACE) on Linux; renamex_np(RENAME_EXCL) on macOS.
+  python3 - "$stage/nvim" "$config" <<'PYTHON'
+import ctypes
+import os
+import sys
+libc = ctypes.CDLL(None, use_errno=True)
+source, destination = map(os.fsencode, sys.argv[1:])
+if sys.platform == "darwin":
+    rename = libc.renamex_np
+    rename.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint]
+    result = rename(source, destination, 4)
+else:
+    rename = libc.renameat2
+    rename.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
+    result = rename(-100, source, -100, destination, 1)
+if result != 0:
+    error = ctypes.get_errno()
+    raise OSError(error, "Config publication refused: " + os.strerror(error))
+PYTHON
 else
   echo 'Preserved existing Neovim config and plugins. No sync or replacement performed.'
 fi
