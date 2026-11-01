@@ -8,6 +8,12 @@ with tempfile.TemporaryDirectory() as tmp:
  tool('xcode-select')
  tool('brew',f'''case "$1" in
  --prefix) echo '{prefix}';;
+ update) echo update >> '{log}';;
+ list) case "$4" in tmux|node) exit 0;; *) exit 1;; esac;;
+ upgrade)
+  [[ "$NONINTERACTIVE" == 1 ]] || exit 70
+  [[ ! -f '{r}/fail-upgrade' ]] || exit 98
+  echo "$*" >> '{log}';;
  install)
   [[ ! -f '{r}/fail-brew' ]] || exit 97
   [[ "$NONINTERACTIVE" == 1 ]] || exit 70
@@ -66,8 +72,19 @@ with tempfile.TemporaryDirectory() as tmp:
  keep.unlink();import shutil;shutil.rmtree(keep.parent);(r/'race').touch()
  p=run('--install');assert p.returncode!=0;assert keep.read_text()=='untouched\n';assert not (keep.parent/'nvim').exists()
  (r/'race').unlink()
- tool('nvim',"echo 'NVIM v0.10.0'");before=log.read_text();p=run('--install');assert p.returncode!=0;assert 'too old' in p.stderr;assert log.read_text()==before
+ # No custom version checks: an existing older tool is retained.
+ tool('nvim',"echo 'NVIM v0.10.0'");before=log.read_text();p=run('--install');assert p.returncode==0;assert log.read_text()==before
+ p=run('--update');assert p.returncode==0,(p.stdout,p.stderr)
+ assert log.read_text()[len(before):]=='update\nupgrade --formula tmux\nupgrade --formula node\n'
+ assert keep.read_text()=='untouched\n'
+ # Missing or externally managed formulas were not installed; npm/node deduped.
+ (r/'fail-upgrade').touch();p=run('--update');assert p.returncode==98,(p.stdout,p.stderr)
+ (r/'fail-upgrade').unlink()
+ before=log.read_text()
+ p=subprocess.run(['/bin/bash','-c','have() { return 1; }; source "$1"','test',str(pathlib.Path(script).parent/'scripts/update.sh')],env=env,capture_output=True,text=True)
+ assert p.returncode==1;assert 'Homebrew not found' in p.stderr;assert log.read_text()==before
+ p=run('--help','extra');assert p.returncode==2
  p=run('--bogus');assert p.returncode==2
  for name in profiles:assert (home/name).read_text()=='UNCHANGED-'+name
  assert (victim/'keep').read_text()=='untouched'
- print('PASS: Codex excluded; check read-only; mock package installs noninteractive; profile bytes preserved; rerun idempotent; interrupted sync retries; real atomic publish refuses concurrent collision; old Neovim and bad arguments refused; hostile inherited cleanup paths survive early failure and normal exits.')
+ print('PASS: Codex excluded; check read-only; mock package installs noninteractive; profile bytes preserved; rerun idempotent; interrupted sync retries; real atomic publish refuses concurrent collision; existing versions retained; scoped/deduplicated updates and failures checked; bad arguments refused; hostile inherited cleanup paths survive early failure and normal exits.')

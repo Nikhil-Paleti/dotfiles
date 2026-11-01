@@ -7,11 +7,7 @@ printf '%-24s %s\n' COMPONENT STATUS
 for item in "${requirements[@]}"; do
   cmd=${item%%:*}
   if have "$cmd"; then
-    if version_ok "$cmd"; then
-      printf '%-24s present\n' "$cmd"
-    else
-      printf '%-24s incompatible-version\n' "$cmd"; missing=1
-    fi
+    printf '%-24s present\n' "$cmd"
   else
     printf '%-24s missing\n' "$cmd"; missing=1
   fi

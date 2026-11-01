@@ -4,8 +4,9 @@ Installs missing terminal/editor tools on macOS or Debian/Ubuntu Linux/WSL2
 (ARM64/x86_64). Preserves existing configuration. Codex is excluded.
 
 ```sh
-bash install.sh --check    # default: read-only; exit 1 means missing/incompatible
+bash install.sh --check    # default: read-only; exit 1 means missing
 bash install.sh --install  # explicitly provision missing tools
+bash install.sh --update   # upgrade installed Homebrew tools from this project
 ```
 
 Run the entry point as your normal user, from any working directory. Modules are
@@ -21,8 +22,8 @@ Every component prints matching `##### ... install #####` start/end markers.
 | `scripts/platform.sh` | Validate OS and architecture. |
 | `scripts/discover.sh` | Find existing Homebrew and Mason tools before availability checks. |
 | `scripts/check.sh` | Report present/missing components; stop in check-only mode. |
-| `scripts/preflight.sh` | Close stdin and refuse incompatible existing Git/Neovim. |
-| `scripts/lib/common.sh` | Shared command/version checks and component output. |
+| `scripts/update.sh` | Refresh Homebrew and upgrade only installed formulae from this project. |
+| `scripts/lib/common.sh` | Shared command checks and component output. |
 | `scripts/lib/temp.sh` | Allocate temporary downloads; clean only directories owned by this run. |
 | `scripts/lib/publish_config.py` | Publish completed LazyVim config atomically without replacing collisions. |
 | `scripts/install/prerequisites.sh` | Check Apple build tools or provision missing Linux build dependencies. |
@@ -41,9 +42,12 @@ Every component prints matching `##### ... install #####` start/end markers.
 
 Installation needs network access and any required privileges provisioned in
 advance. Homebrew runs noninteractively; Linux apt uses `sudo -n`. Fresh macOS
-requires Apple command-line tools completed separately. Existing Git below 2.19
-or Neovim below 0.11.2 causes refusal rather than silently changing another
-package manager's installation.
+requires Apple command-line tools completed separately. There are no custom version comparisons, pins or lockfiles. Install mode keeps
+existing tools; update mode lets Homebrew choose current releases. Update mode
+does not install missing tools or update OS packages, tools from other managers,
+or Neovim plugins. Homebrew may update dependencies of the selected formulae.
+Use `:Lazy update` inside Neovim for LazyVim/plugins. Compatibility with a
+particular existing tool version is not checked by this script.
 
 Existing commands, including Mason-managed tools, are reused. A fresh Neovim
 configuration is cloned and synced in a temporary directory on the destination
@@ -68,8 +72,8 @@ python3 tests/test_install.py
 Tests use disposable temporary homes. Package installs, Git cloning and Neovim
 sync are mocked; filesystem operations and atomic config publication are real.
 They cover read-only checks, missing tools, profiles/config preservation,
-idempotence, retry after sync failure, concurrent collision refusal, incompatible
-versions, bad arguments, and hostile inherited cleanup paths. Real provisioning
+idempotence, update scope/deduplication, retry after sync failure, concurrent collision refusal, incompatible
+arguments, and hostile inherited cleanup paths. Real provisioning
 and Linux/WSL integration have not been tested.
 
 Sources: [LazyVim](https://www.lazyvim.org/installation),

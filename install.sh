@@ -1,25 +1,32 @@
 #!/usr/bin/env bash
-# Usage: bash install.sh [--check|--install]
-# --check is the default and makes no changes. --install provisions missing tools.
+# Usage: bash install.sh [--check|--install|--update]
+# --check reports availability; --install adds missing tools; --update upgrades managed tools.
 # Run as a normal user on macOS or Debian/Ubuntu Linux/WSL2 (ARM64/x86_64).
 # Existing tools/config stay intact. No authentication or shell-profile edits.
 set -euo pipefail
-readonly DOTFILES_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+readonly DOTFILES_ROOT
+[[ $# -le 1 ]] || { echo 'Only one argument is supported.' >&2; exit 2; }
 mode=check
 case "${1:---check}" in
   --check) ;;
   --install) mode=install ;;
+  --update) mode=update ;;
   -h|--help) sed -n '2,5p' "$DOTFILES_ROOT/install.sh"; exit 0 ;;
-  *) echo 'Usage: bash install.sh [--check|--install]' >&2; exit 2 ;;
+  *) echo 'Usage: bash install.sh [--check|--install|--update]' >&2; exit 2 ;;
 esac
-[[ $# -le 1 ]] || { echo 'Only one argument is supported.' >&2; exit 2; }
 # Modules are sourced in one process so PATH discovery and owned-temp cleanup
 # remain available across steps. Invoke this entry point, not modules directly.
 source "$DOTFILES_ROOT/scripts/lib/common.sh"
 source "$DOTFILES_ROOT/scripts/platform.sh"
 source "$DOTFILES_ROOT/scripts/discover.sh"
 source "$DOTFILES_ROOT/scripts/check.sh"
-source "$DOTFILES_ROOT/scripts/preflight.sh"
+# Noninteractive child processes; update does not run the install modules.
+exec </dev/null
+if [[ "$mode" == update ]]; then
+  source "$DOTFILES_ROOT/scripts/update.sh"
+  exit 0
+fi
 source "$DOTFILES_ROOT/scripts/install/prerequisites.sh"
 source "$DOTFILES_ROOT/scripts/lib/temp.sh"
 source "$DOTFILES_ROOT/scripts/install/homebrew.sh"
