@@ -1,4 +1,4 @@
-# Copy the repo's Neovim config into place, keeping a unique backup of the old one.
+# Copy repo Neovim config into place, keeping a persistent nvim_backup beside it.
 # Run one installer at a time; backups are never removed automatically.
 block_start LazyVim
 source_config="$DOTFILES_ROOT/config/nvim"
@@ -13,17 +13,22 @@ printf '%s\n' "$_dotfiles_cleanup_owner" > "$_dotfiles_stage_dir/.dotfiles-insta
 cp -Rp "$source_config" "$_dotfiles_stage_dir/nvim"
 backup=''
 if [[ -e "$config" || -L "$config" ]]; then
-  backup=$(mktemp -d "${config}.backup.XXXXXX")
-  printf 'Backup location: %s/nvim\n' "$backup"
-  mv "$config" "$backup/nvim"
+  backup="${config}_backup"
+  suffix=1
+  while [[ -e "$backup" || -L "$backup" ]]; do
+    backup="${config}_backup.$suffix"
+    suffix=$((suffix + 1))
+  done
+  printf 'Backing up existing config to: %s\n' "$backup"
+  mv "$config" "$backup"
 fi
 if [[ -e "$config" || -L "$config" ]] || ! mv "$_dotfiles_stage_dir/nvim" "$config"; then
   echo 'Could not install Neovim config.' >&2
   if [[ -n "$backup" ]]; then
-    if [[ ! -e "$config" && ! -L "$config" ]] && mv "$backup/nvim" "$config"; then
+    if [[ ! -e "$config" && ! -L "$config" ]] && mv "$backup" "$config"; then
       echo 'Previous config restored.' >&2
     else
-      printf 'Previous config is at %s/nvim; restore it manually.\n' "$backup" >&2
+      printf 'Previous config is at %s; move it back to %s after moving any replacement aside.\n' "$backup" "$config" >&2
     fi
   fi
   exit 1
