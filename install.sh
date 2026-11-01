@@ -3,7 +3,7 @@
 # Usage: bash install.sh [--install|--update|--help]
 # --install installs missing tools and backs up/replaces Neovim config.
 # --update upgrades installed managed Homebrew tools; it does not change config.
-# No argument shows help. Run as a normal user; no shell-profile edits.
+# No argument shows help. Run as a normal user.
 set -euo pipefail
 DOTFILES_ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly DOTFILES_ROOT
@@ -42,4 +42,3 @@ printf '\nProvisioning finished. Repo Neovim config installed; previous config b
 printf 'Homebrew PATH for future shells: eval "$(%s shellenv)"\n' "$(command -v brew)"
 echo 'Tools (including zsh and uv) are installed or reused; zsh plugins are installed but not enabled.'
 echo 'Start nvim to install plugins, then run :LazyHealth. Language extras remain feature-specific.'
-echo 'Conda/OrbStack are not installed by this script; authentication, default shell and shell profiles are unchanged.'
