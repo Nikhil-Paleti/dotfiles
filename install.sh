@@ -3,7 +3,7 @@
 # Usage: bash install.sh [--install|--update|--help]
 # --install installs missing tools and backs up/replaces Neovim config.
 # --update upgrades installed managed Homebrew tools; it does not change config.
-# No argument shows help. Run as a normal user.
+# No argument shows help. Run as a normal user; system setup may request sudo.
 set -euo pipefail
 DOTFILES_ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly DOTFILES_ROOT
@@ -20,8 +20,7 @@ source "$DOTFILES_ROOT/scripts/lib/common.sh"
 source "$DOTFILES_ROOT/scripts/platform.sh"
 source "$DOTFILES_ROOT/scripts/discover.sh"
 source "$DOTFILES_ROOT/scripts/components.sh"
-# Noninteractive child processes; update does not run the install modules.
-exec </dev/null
+# Keep terminal input available for setup prompts; update runs separately.
 if [[ "$mode" == update ]]; then
   source "$DOTFILES_ROOT/scripts/update.sh"
   exit 0
@@ -29,7 +28,7 @@ fi
 source "$DOTFILES_ROOT/scripts/install/prerequisites.sh"
 source "$DOTFILES_ROOT/scripts/lib/temp.sh"
 source "$DOTFILES_ROOT/scripts/install/homebrew.sh"
-export NONINTERACTIVE=1 HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_UPGRADE=1
+export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_UPGRADE=1
 source "$DOTFILES_ROOT/scripts/install/core.sh"
 source "$DOTFILES_ROOT/scripts/install/tmux.sh"
 source "$DOTFILES_ROOT/scripts/install/neovim.sh"
