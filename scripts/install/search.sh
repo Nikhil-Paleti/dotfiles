@@ -1,3 +1,4 @@
+# Install missing search and Git tools: ripgrep, fd, lazygit, and fzf.
 ##### ripgrep install #####
 install_tool "ripgrep" rg
 ##### end ripgrep install #####
