@@ -40,6 +40,6 @@ source "$DOTFILES_ROOT/scripts/install/shell.sh"
 source "$DOTFILES_ROOT/scripts/install/lazyvim.sh"
 printf '\nProvisioning finished. Repo Neovim config installed; previous config backed up if present.\n'
 printf 'Homebrew PATH for future shells: eval "$(%s shellenv)"\n' "$(command -v brew)"
-echo 'Zsh plugins are installed, not enabled. Choose a Nerd Font for terminal icons.'
+echo 'Tools (including zsh and uv) are installed or reused; zsh plugins are installed but not enabled.'
 echo 'Start nvim to install plugins, then run :LazyHealth. Language extras remain feature-specific.'
-echo 'No Conda, OrbStack, authentication, default-shell or shell-profile changes.'
+echo 'Conda/OrbStack are not installed by this script; authentication, default shell and shell profiles are unchanged.'
