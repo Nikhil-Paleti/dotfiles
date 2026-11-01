@@ -8,7 +8,8 @@ if [[ ! -e "$config" && ! -L "$config" ]]; then
   git clone --depth 1 https://github.com/LazyVim/starter "$_dotfiles_stage_dir/nvim"
   # Sync against temporary config, using the normal nvim data/cache directories.
   # Failures leave the destination absent; retry reuses downloaded plugin data.
-  XDG_CONFIG_HOME="$_dotfiles_stage_dir" NVIM_APPNAME=nvim nvim --headless '+Lazy! sync' +qa
+  env -u VIMINIT -u EXINIT XDG_CONFIG_HOME="$_dotfiles_stage_dir" NVIM_APPNAME=nvim \
+    nvim --headless -i NONE -u "$_dotfiles_stage_dir/nvim/init.lua" -l "$DOTFILES_ROOT/scripts/lib/sync_lazyvim.lua"
   # Atomically publish a completed config, refusing even concurrent collisions.
   # renameat2(RENAME_NOREPLACE) on Linux; renamex_np(RENAME_EXCL) on macOS.
   python3 "$DOTFILES_ROOT/scripts/lib/publish_config.py" "$_dotfiles_stage_dir/nvim" "$config"

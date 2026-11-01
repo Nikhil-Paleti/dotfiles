@@ -4,7 +4,7 @@
 # Run as a normal user on macOS or Debian/Ubuntu Linux/WSL2 (ARM64/x86_64).
 # Existing tools/config stay intact. No authentication or shell-profile edits.
 set -euo pipefail
-DOTFILES_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES_ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly DOTFILES_ROOT
 [[ $# -le 1 ]] || { echo 'Only one argument is supported.' >&2; exit 2; }
 mode=check
@@ -20,6 +20,7 @@ esac
 source "$DOTFILES_ROOT/scripts/lib/common.sh"
 source "$DOTFILES_ROOT/scripts/platform.sh"
 source "$DOTFILES_ROOT/scripts/discover.sh"
+source "$DOTFILES_ROOT/scripts/components.sh"
 source "$DOTFILES_ROOT/scripts/check.sh"
 # Noninteractive child processes; update does not run the install modules.
 exec </dev/null

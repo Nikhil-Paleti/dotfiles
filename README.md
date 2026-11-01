@@ -12,7 +12,7 @@ bash install.sh --update   # upgrade installed Homebrew tools from this project
 Run the entry point as your normal user, from any working directory. Modules are
 sourced by the entry point and share its PATH and cleanup state; do not run them
 individually. Keep the checkout together rather than downloading install.sh alone.
-Every component prints matching `##### ... install #####` start/end markers.
+Every component prints matching `##### ... install #####` start/end markers (`update` in update mode).
 
 ## Layout
 
@@ -21,10 +21,12 @@ Every component prints matching `##### ... install #####` start/end markers.
 | `install.sh` | Parse arguments and run modules in dependency order. |
 | `scripts/platform.sh` | Validate OS and architecture. |
 | `scripts/discover.sh` | Find existing Homebrew and Mason tools before availability checks. |
+| `scripts/components.sh` | One command/formula and shell-plugin list used by checks, installs and updates. |
 | `scripts/check.sh` | Report present/missing components; stop in check-only mode. |
 | `scripts/update.sh` | Refresh Homebrew and upgrade only installed formulae from this project. |
 | `scripts/lib/common.sh` | Shared command checks and component output. |
 | `scripts/lib/temp.sh` | Allocate temporary downloads; clean only directories owned by this run. |
+| `scripts/lib/sync_lazyvim.lua` | Sync fresh plugins and fail on startup/plugin-task errors. |
 | `scripts/lib/publish_config.py` | Publish completed LazyVim config atomically without replacing collisions. |
 | `scripts/install/prerequisites.sh` | Check Apple build tools or provision missing Linux build dependencies. |
 | `scripts/install/homebrew.sh` | Install Homebrew if absent. |
@@ -37,6 +39,8 @@ Every component prints matching `##### ... install #####` start/end markers.
 | `scripts/install/shell.sh` | zsh, autosuggestions, completions, syntax highlighting. |
 | `scripts/install/lazyvim.sh` | Stage, sync and publish a fresh LazyVim starter; skip existing configs. |
 | `tests/test_install.py` | Isolated tests with mocked package managers, Git and Neovim. |
+| `tests/test_platform.py` | Mocked Linux distribution and WSL detection tests. |
+| `tests/test_sync.py` | Run the Lua validator with stubbed plugin state; needs an existing Lua interpreter. |
 
 ## Behavior and limits
 
@@ -54,8 +58,9 @@ configuration is cloned and synced in a temporary directory on the destination
 filesystem. Only after sync succeeds is it atomically published, with no replacing
 an existing destination. A failed sync leaves the final path absent so rerunning
 can retry. Existing config is never executed or replaced. Plugin data/cache may
-be downloaded during fresh setup; plugins whose failures do not produce a
-nonzero Neovim exit are not independently validated.
+be downloaded during fresh setup. A separate validator checks startup errors,
+missing remote plugins and failed lazy.nvim tasks before publication. Background
+language-server/tool health still requires `:LazyHealth` and relevant checks in Neovim.
 
 No shell-profile edits, default-shell changes, authentication or personal dotfile
 migration. Zsh plugins are installed but not enabled. Add Homebrew to future
@@ -67,13 +72,17 @@ supported; use WSL2.
 
 ```sh
 python3 tests/test_install.py
+python3 tests/test_platform.py
+python3 tests/test_sync.py  # skips if Lua is unavailable; installs nothing
 ```
 
 Tests use disposable temporary homes. Package installs, Git cloning and Neovim
 sync are mocked; filesystem operations and atomic config publication are real.
 They cover read-only checks, missing tools, profiles/config preservation,
-idempotence, update scope/deduplication, retry after sync failure, concurrent collision refusal, incompatible
-arguments, and hostile inherited cleanup paths. Real provisioning
+idempotence, update scope/deduplication, Homebrew failures, retry after sync
+failure, concurrent collision refusal, argument validation, CDPATH/XDG handling,
+and hostile inherited cleanup paths. Linux kernel/distribution inputs and
+plugin-manager state are stubbed in separate tests. Real provisioning
 and Linux/WSL integration have not been tested.
 
 Sources: [LazyVim](https://www.lazyvim.org/installation),

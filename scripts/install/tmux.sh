@@ -1,3 +1,3 @@
 ##### tmux install #####
-install_tool "tmux" tmux tmux
+install_tool "tmux" tmux
 ##### end tmux install #####

@@ -1,15 +1,15 @@
 ##### ripgrep install #####
-install_tool "ripgrep" rg ripgrep
+install_tool "ripgrep" rg
 ##### end ripgrep install #####
 
 ##### fd install #####
-install_tool "fd" fd fd
+install_tool "fd" fd
 ##### end fd install #####
 
 ##### lazygit install #####
-install_tool "lazygit" lazygit lazygit
+install_tool "lazygit" lazygit
 ##### end lazygit install #####
 
 ##### fzf install #####
-install_tool "fzf" fzf fzf
+install_tool "fzf" fzf
 ##### end fzf install #####

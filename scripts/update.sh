@@ -3,8 +3,10 @@
 have brew || { echo 'Homebrew not found. Run --install first.' >&2; exit 1; }
 export NONINTERACTIVE=1 HOMEBREW_NO_AUTO_UPDATE=1
 brew update
-updated_formulae=':'
-for item in "${requirements[@]}" zsh-autosuggestions:zsh-autosuggestions zsh-completions:zsh-completions zsh-syntax-highlighting:zsh-syntax-highlighting; do
+# A broken package database is an error, not a list of missing tools.
+brew list --formula >/dev/null
+updated_formulae=':' 
+for item in "${requirements[@]}" "${shell_plugins[@]}"; do
   formula=${item#*:}
   # Node.js and npm share a formula: process it only once.
   case "$updated_formulae" in *":$formula:"*) continue ;; esac

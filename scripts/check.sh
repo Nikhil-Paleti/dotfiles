@@ -1,7 +1,4 @@
-# command:Homebrew formula. Skip any usable command from another manager too.
-requirements=(git:git curl:curl tmux:tmux nvim:neovim rg:ripgrep fd:fd
-  lazygit:lazygit fzf:fzf tree-sitter:tree-sitter python3:python node:node
-  npm:node zsh:zsh stylua:stylua shfmt:shfmt shellcheck:shellcheck)
+# Report availability; installation and updates use the same component list.
 missing=0
 printf '%-24s %s\n' COMPONENT STATUS
 for item in "${requirements[@]}"; do
@@ -21,8 +18,12 @@ if [[ -e "$config" || -L "$config" ]]; then
 else
   printf '%-24s missing-starter\n' LazyVim; missing=1
 fi
-for formula in zsh-autosuggestions zsh-completions zsh-syntax-highlighting; do
-  if have brew && [[ -d "$(brew --prefix)/share/$formula" ]]; then
+brew_prefix=''
+if have brew; then
+  brew_prefix=$(brew --prefix)
+fi
+for formula in "${shell_plugins[@]}"; do
+  if [[ -n "$brew_prefix" && -d "$brew_prefix/share/$formula" ]]; then
     printf '%-24s present\n' "$formula"
   else
     printf '%-24s missing\n' "$formula"; missing=1

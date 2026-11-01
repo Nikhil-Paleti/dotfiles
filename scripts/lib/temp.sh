@@ -8,7 +8,7 @@ _dotfiles_remove_owned() {
   if [[ -n "$owned_dir" && -d "$owned_dir" && ! -L "$owned_dir" &&
         -f "$owned_dir/.dotfiles-installer-owner" && ! -L "$owned_dir/.dotfiles-installer-owner" ]] &&
      [[ "$(cat "$owned_dir/.dotfiles-installer-owner")" == "$_dotfiles_cleanup_owner" ]]; then
-    rm -rf -- "$owned_dir"
+    rm -rf -- "$owned_dir" || echo "Could not remove temporary directory: $owned_dir" >&2
   fi
   return 0
 }
