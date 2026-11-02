@@ -6,7 +6,7 @@ brew update
 # A broken package database is an error, not a list of missing tools.
 brew list --formula >/dev/null
 updated_formulae=':' 
-for item in "${requirements[@]}" "${shell_plugins[@]}"; do
+for item in "${requirements[@]}"; do
   formula=${item#*:}
   # Node.js and npm share a formula: process it only once.
   case "$updated_formulae" in *":$formula:"*) continue ;; esac
