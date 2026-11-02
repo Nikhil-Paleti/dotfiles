@@ -8,7 +8,7 @@ if [[ "$os" == Darwin ]]; then
   fi
 else
   deps=()
-  for pair in cc:build-essential make:build-essential g++:build-essential curl:curl file:file git:git ps:procps; do
+  for pair in cc:build-essential make:build-essential g++:build-essential curl:curl file:file git:git ps:procps unzip:unzip; do
     have "${pair%%:*}" || deps+=("${pair#*:}")
   done
   if [[ ${#deps[@]} -gt 0 ]]; then
