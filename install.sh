@@ -37,6 +37,7 @@ source "$DOTFILES_ROOT/scripts/install/runtimes.sh"
 source "$DOTFILES_ROOT/scripts/install/formatters.sh"
 source "$DOTFILES_ROOT/scripts/install/lazyvim.sh"
 printf '\nProvisioning finished. Repo Neovim and tmux configs installed; previous configs backed up if present.\n'
-echo 'Homebrew is configured for future shells; open a new terminal to use it.'
+echo 'Homebrew is configured for future shells. Open a new terminal, or run this in the current one:'
+printf 'eval "$("%s" shellenv)"\n' "$(command -v brew)"
 echo 'Tools (including uv) are installed or reused; your default shell is unchanged.'
 echo 'Start nvim to install plugins, then run :LazyHealth. Language extras remain feature-specific.'
