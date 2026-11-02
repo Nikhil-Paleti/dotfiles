@@ -12,7 +12,7 @@ cd ~/dotfiles
 bash install.sh --install
 ```
 
-Missing tools use Homebrew, installed if needed; existing commands are reused. Follow the printed Homebrew `shellenv` instruction for future shells. zsh plugins are installed but not enabled, and your default shell is unchanged.
+Missing tools use Homebrew, installed if needed; existing commands are reused. Homebrew is configured automatically for future macOS zsh and Ubuntu/Debian bash sessions; open a new terminal after installation. Existing `shellenv` initialization is kept. The installer uses `SHELL` to select startup files and honors an exported, absolute `ZDOTDIR` for zsh. Startup-file symlinks are refused with an error rather than edited. zsh plugins are installed but not enabled, and your default shell is unchanged.
 
 Open `nvim` to install editor plugins, then run `:LazyHealth` and `:checkhealth mason`.
 
