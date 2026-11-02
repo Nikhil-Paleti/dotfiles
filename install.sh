@@ -28,7 +28,6 @@ fi
 source "$DOTFILES_ROOT/scripts/install/prerequisites.sh"
 source "$DOTFILES_ROOT/scripts/lib/temp.sh"
 source "$DOTFILES_ROOT/scripts/install/homebrew.sh"
-source "$DOTFILES_ROOT/scripts/install/shellenv.sh"
 export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_UPGRADE=1
 source "$DOTFILES_ROOT/scripts/install/core.sh"
 source "$DOTFILES_ROOT/scripts/install/tmux.sh"
