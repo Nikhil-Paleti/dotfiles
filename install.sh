@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Install missing tools and apply repo Neovim config with persistent backups.
+# Install missing tools and apply repo Neovim and tmux configs with persistent backups.
 # Usage: bash install.sh [--install|--update|--help]
-# --install installs missing tools and backs up/replaces Neovim config.
+# --install installs missing tools and backs up/replaces Neovim and tmux configs.
 # --update upgrades installed managed Homebrew tools; it does not change config.
 # No argument shows help. Run as a normal user; system setup may request sudo.
 set -euo pipefail
@@ -36,7 +36,7 @@ source "$DOTFILES_ROOT/scripts/install/search.sh"
 source "$DOTFILES_ROOT/scripts/install/runtimes.sh"
 source "$DOTFILES_ROOT/scripts/install/formatters.sh"
 source "$DOTFILES_ROOT/scripts/install/lazyvim.sh"
-printf '\nProvisioning finished. Repo Neovim config installed; previous config backed up if present.\n'
+printf '\nProvisioning finished. Repo Neovim and tmux configs installed; previous configs backed up if present.\n'
 echo 'Homebrew is configured for future shells; open a new terminal to use it.'
 echo 'Tools (including uv) are installed or reused; your default shell is unchanged.'
 echo 'Start nvim to install plugins, then run :LazyHealth. Language extras remain feature-specific.'
