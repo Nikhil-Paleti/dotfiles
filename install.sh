@@ -38,6 +38,6 @@ source "$DOTFILES_ROOT/scripts/install/formatters.sh"
 source "$DOTFILES_ROOT/scripts/install/shell.sh"
 source "$DOTFILES_ROOT/scripts/install/lazyvim.sh"
 printf '\nProvisioning finished. Repo Neovim config installed; previous config backed up if present.\n'
-printf 'Homebrew PATH for future shells: eval "$(%s shellenv)"\n' "$(command -v brew)"
+echo 'Homebrew is configured for future shells; open a new terminal to use it.'
 echo 'Tools (including zsh and uv) are installed or reused; zsh plugins are installed but not enabled.'
 echo 'Start nvim to install plugins, then run :LazyHealth. Language extras remain feature-specific.'

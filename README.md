@@ -12,7 +12,7 @@ cd ~/dotfiles
 bash install.sh --install
 ```
 
-Missing tools use Homebrew, installed if needed; existing commands are reused. Follow the printed Homebrew `shellenv` instruction for future shells. zsh plugins are installed but not enabled, and your default shell is unchanged.
+Missing tools use Homebrew, installed if needed; existing commands are reused. Homebrew is set up automatically for future bash and zsh sessions; open a new terminal after installation. zsh plugins are installed but not enabled, and your default shell is unchanged.
 
 Open `nvim` to install editor plugins, then run `:LazyHealth` and `:checkhealth mason`.
 
