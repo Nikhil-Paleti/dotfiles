@@ -1,3 +1,4 @@
+# Install missing system build dependencies, requesting sudo only when needed.
 ##### Build prerequisites install #####
 printf '\n##### Build prerequisites install #####\n'
 if [[ "$os" == Darwin ]]; then
@@ -11,9 +12,11 @@ else
     have "${pair%%:*}" || deps+=("${pair#*:}")
   done
   if [[ ${#deps[@]} -gt 0 ]]; then
+    have apt-get || { echo 'apt-get is required for missing Debian/Ubuntu build dependencies.' >&2; exit 1; }
     have sudo || { echo 'sudo is required for missing Linux bootstrap packages.' >&2; exit 1; }
-    sudo -n apt-get update
-    sudo -n apt-get install -y "${deps[@]}" ca-certificates
+    echo 'System build dependencies are missing; sudo may request your password.'
+    sudo apt-get update
+    sudo apt-get install -y "${deps[@]}" ca-certificates
   fi
 fi
 printf '##### end Build prerequisites install #####\n'

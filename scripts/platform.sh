@@ -1,6 +1,6 @@
 # Platform validation only. This module installs nothing and writes no files.
 # Intended to be sourced by the future Bash entry point.
-[[ ${EUID:-$(id -u)} -ne 0 ]] || { echo 'Run as your normal user, not root.' >&2; exit 1; }
+[[ ${EUID:-$(id -u)} -ne 0 ]] || { echo 'Run without sudo as your normal user; only system setup steps request elevated privileges.' >&2; exit 1; }
 os=$(uname -s)
 case "$os" in
   Darwin) ;;
