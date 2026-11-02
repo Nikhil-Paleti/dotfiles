@@ -4,13 +4,7 @@ Personal LazyVim configuration and a Bash installer for command-line tools.
 
 ## Install
 
-- Targets macOS and Debian/Ubuntu (including WSL2), on ARM64 or x86_64.
-- Requires Bash, Git to clone this repo, and internet access.
-- Ubuntu prerequisites use `apt-get` and `sudo` when needed. On macOS, finish `xcode-select --install` first.
-
-Run as your normal user, **not with `sudo bash`**. System setup can prompt for your password.
-
-**Warning:** Every `--install` run replaces `${XDG_CONFIG_HOME:-$HOME/.config}/nvim` with [this repo's config](config/nvim). Existing config is backed up first; see below. Keep the checkout outside that destination.
+On macOS, finish `xcode-select --install` first.
 
 ```sh
 git clone https://github.com/Nikhil-Paleti/dotfiles.git ~/dotfiles
