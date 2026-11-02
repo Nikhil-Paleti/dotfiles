@@ -12,11 +12,19 @@ cd ~/dotfiles
 bash install.sh --install
 ```
 
-Missing tools use Homebrew, installed if needed; existing commands are reused. Homebrew is set up automatically for future bash and zsh sessions; open a new terminal after installation. Your default shell is unchanged.
+Missing tools use Homebrew, installed if needed; existing commands are reused. Homebrew is set up automatically for future bash and zsh sessions. The installer cannot change the PATH of the terminal that launched it: open a new terminal, or run the exact `eval` command printed at the end. Your default shell is unchanged.
 
 tmux uses the repo [config](config/tmux/tmux.conf) at `~/.tmux.conf`: Ctrl+A prefix, mouse support, numbering from 1, Vim-style pane navigation/resizing, and Prefix+r to reload. Any XDG tmux config is left untouched; `~/.tmux.conf` takes precedence. Existing servers keep their current settings until you explicitly load the new config.
 
 Open `nvim` to install editor plugins, then run `:LazyHealth` and `:checkhealth mason`.
+
+On WSL, the current-terminal command is normally:
+
+```sh
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+```
+
+For icon glyphs, [LazyVim needs a Nerd Font v3+](https://www.lazyvim.org/). With Windows Terminal, install the font on Windows and select it for the Ubuntu/WSL profile under [Settings → Appearance → Font face](https://learn.microsoft.com/en-us/windows/terminal/customize-settings/profile-appearance#font-face). The Linux installer does not configure the Windows terminal font.
 
 ## Update
 
