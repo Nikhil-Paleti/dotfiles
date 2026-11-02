@@ -37,7 +37,3 @@ Upgrades installed Homebrew packages from the [tool list](scripts/components.sh)
 Backups stay beside `nvim`, named `nvim_backup`, then `nvim_backup.1`, `nvim_backup.2`, etc. The installer prints the actual path and never deletes backups automatically.
 
 To restore, close Neovim, move the current `nvim` path aside to an unused name, then rename your chosen backup to `nvim`. Run only one installer at a time; if replacement fails, follow its recovery message.
-
-## Testing
-
-Ubuntu ARM64 has been exercised. Native macOS and other platform combinations remain unvalidated; mocked tests are not a substitute for those runs.
