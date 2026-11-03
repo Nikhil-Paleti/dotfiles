@@ -16,7 +16,7 @@ Missing tools use Homebrew, installed if needed; existing commands are reused. H
 
 tmux uses the repo [config](config/tmux/tmux.conf) at `~/.tmux.conf`: Ctrl+A prefix, mouse support, numbering from 1, Vim-style pane navigation/resizing, and Prefix+r to reload. Any XDG tmux config is left untouched; `~/.tmux.conf` takes precedence. Existing servers keep their current settings until you explicitly load the new config.
 
-Open `nvim` to install editor plugins, then run `:LazyHealth` and `:checkhealth mason`.
+Carbonfox is the default Neovim theme. Open `nvim` to install editor plugins, then run `:LazyHealth` and `:checkhealth mason`.
 
 On WSL, the current-terminal command is normally:
 
@@ -28,18 +28,17 @@ For icon glyphs, [LazyVim needs a Nerd Font v3+](https://www.lazyvim.org/). With
 
 ## Update
 
-From the repo directory:
+From the repo checkout on `main`:
 
 ```sh
+git pull --ff-only
 bash install.sh --update
 ```
 
-Upgrades installed Homebrew packages from the [tool list](scripts/components.sh); it doesn't install missing tools or replace config. Manage Neovim plugins with `:Lazy update` and Mason packages inside Neovim. Use `bash install.sh --help` for usage.
+Upgrades installed Homebrew packages from the [tool list](scripts/components.sh), then replaces the installed Neovim and tmux configs with the versions in this checkout. Missing system tools are not installed. Restart Neovim so Lazy can install newly added plugins, including Nightfox for Carbonfox. Existing tmux servers need `tmux source-file ~/.tmux.conf` to reload.
 
-## Backups and restore
+## Configuration ownership
 
-Backups stay beside `nvim`, named `nvim_backup`, then `nvim_backup.1`, `nvim_backup.2`, etc. The installer prints the actual path and never deletes backups automatically.
+Both `--install` and `--update` replace `${XDG_CONFIG_HOME:-$HOME/.config}/nvim` and `~/.tmux.conf` without backups. Local-only edits and extra files in the Neovim config directory are removed. GitHub preserves committed repo versions, **not changes made only to the installed copies**; save anything you want to keep before running either command. Keep shared customizations in the repo.
 
-tmux backups stay beside `~/.tmux.conf`, named `.tmux.conf_backup`, then `.tmux.conf_backup.1`, etc. Symlinks are backed up as symlinks; their targets are not edited. To restore, move the current `.tmux.conf` aside and rename the chosen backup to `.tmux.conf`. Custom `tmux -f` startup paths are not changed.
-
-To restore, close Neovim, move the current `nvim` path aside to an unused name, then rename your chosen backup to `nvim`. Run only one installer at a time; if replacement fails, follow its recovery message.
+Existing config symlinks are replaced, not followed; their external targets and any old backup directories are left untouched. XDG tmux files and custom `tmux -f` paths remain user-managed. Run one installer at a time. Configs are staged before replacement, but replacement is not an atomic transaction: if it fails after removal, correct the reported error and rerun. No rollback copy is retained.
