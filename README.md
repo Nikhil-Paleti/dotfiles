@@ -16,7 +16,7 @@ Missing tools use Homebrew, installed if needed; existing commands are reused. H
 
 tmux uses the repo [config](config/tmux/tmux.conf) at `~/.tmux.conf`: Ctrl+A prefix, mouse support, numbering from 1, Vim-style pane navigation/resizing, and Prefix+r to reload. Any XDG tmux config is left untouched; `~/.tmux.conf` takes precedence. Existing servers keep their current settings until you explicitly load the new config.
 
-Open `nvim` to install editor plugins, then run `:LazyHealth` and `:checkhealth mason`.
+Carbonfox is the default Neovim theme. Open `nvim` to install editor plugins, then run `:LazyHealth` and `:checkhealth mason`.
 
 On WSL, the current-terminal command is normally:
 
@@ -35,6 +35,21 @@ bash install.sh --update
 ```
 
 Upgrades installed Homebrew packages from the [tool list](scripts/components.sh); it doesn't install missing tools or replace config. Manage Neovim plugins with `:Lazy update` and Mason packages inside Neovim. Use `bash install.sh --help` for usage.
+
+### Apply the theme to an existing installation
+
+The installer copies Neovim config; pulling the repo or running `--update` does not change that installed copy. To apply only Carbonfox, from your dotfiles checkout on `main`:
+
+```sh
+git pull --ff-only
+nvim_config="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
+mkdir -p "$nvim_config/lua/plugins"
+cp -i config/nvim/lua/plugins/carbonfox.lua "$nvim_config/lua/plugins/carbonfox.lua"
+```
+
+If that file already exists, save your edits before confirming replacement. Restart Neovim and let Lazy install Nightfox (or run `:Lazy install`), then restart again. Check `:echo g:colors_name` prints `carbonfox`. This leaves other config files and plugin pins alone; the new plugin gets its own local lock entry. Any other colorscheme override in your config must also be removed or changed.
+
+For the complete repo configuration instead, rerun `bash install.sh --install`: installed tools are reused, and your Neovim/tmux configs are backed up before replacement.
 
 ## Backups and restore
 
