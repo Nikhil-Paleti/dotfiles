@@ -19,5 +19,5 @@ for item in "${requirements[@]}"; do
   fi
   printf '##### end %s update #####\n' "$formula"
 done
-echo 'Update complete. Missing tools, system packages, Mason tools and Neovim plugins were left alone.'
-echo 'Manage LazyVim/plugin updates inside Neovim with :Lazy update.'
+echo 'Package update complete. Missing tools and system packages were left alone; applying repo configs next.'
+echo 'Neovim plugins are installed from the applied config when Neovim starts.'
