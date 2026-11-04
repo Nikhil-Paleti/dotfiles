@@ -1,0 +1,30 @@
+# Shared interactive settings. Homebrew initialization is added by the installer.
+[[ -o interactive ]] || return
+
+# shellenv may emit nothing when a parent Bash already initialized PATH.
+typeset -U fpath
+fpath=("$HOMEBREW_PREFIX/share/zsh/site-functions" $fpath)
+
+# Keep an existing completion setup and prompt, including framework themes.
+if (( ! $+functions[compdef] )); then
+  autoload -Uz compinit
+  compinit
+fi
+HISTFILE=${HISTFILE:-${ZDOTDIR:-$HOME}/.zsh_history}
+HISTSIZE=$(( HISTSIZE < 10000 ? 10000 : HISTSIZE ))
+SAVEHIST=$(( SAVEHIST < 10000 ? 10000 : SAVEHIST ))
+setopt APPEND_HISTORY HIST_IGNORE_DUPS HIST_IGNORE_SPACE
+
+if (( ! $+functions[_zsh_autosuggest_start] )); then
+  [[ ! -r "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] ||
+    source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+fi
+
+# Private, machine-specific aliases and settings stay outside the public repo.
+[[ ! -r "${ZDOTDIR:-$HOME}/.zshrc.local" ]] || source "${ZDOTDIR:-$HOME}/.zshrc.local"
+
+# Syntax highlighting must be the last new plugin loaded.
+if (( ! $+functions[_zsh_highlight] )); then
+  [[ ! -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] ||
+    source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+fi
