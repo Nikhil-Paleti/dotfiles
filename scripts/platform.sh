@@ -25,11 +25,6 @@ case "$(uname -m)" in
   *) echo 'Supported architectures: ARM64 and x86_64.' >&2; exit 1 ;;
 esac
 # XDG paths must be absolute. Reject ambiguous destinations before any writes.
-for xdg_path in "${XDG_CONFIG_HOME:-$HOME/.config}" "${XDG_DATA_HOME:-$HOME/.local/share}" "${ZDOTDIR:-$HOME}"; do
-  case "$xdg_path" in /*) ;; *) echo 'XDG config/data paths and ZDOTDIR must be absolute.' >&2; exit 1 ;; esac
+for xdg_path in "${XDG_CONFIG_HOME:-$HOME/.config}" "${XDG_DATA_HOME:-$HOME/.local/share}"; do
+  case "$xdg_path" in /*) ;; *) echo 'XDG config/data paths must be absolute.' >&2; exit 1 ;; esac
 done
-# Do not follow a user-managed zshrc symlink or overwrite a non-file.
-zshrc="${ZDOTDIR:-$HOME}/.zshrc"
-[[ ! -L "$zshrc" && ( ! -e "$zshrc" || -f "$zshrc" ) ]] || {
-  echo "Keep your existing $zshrc; use a regular file or integrate config/zsh/zshrc manually." >&2; exit 1;
-}
