@@ -1,8 +1,6 @@
-# Update only installed Homebrew formulae from this project's tool list.
-# Only install a missing gh command for Octo; leave other missing tools alone.
+# Update installed Homebrew formulae from this project's tool list.
+# The normal install steps that follow provide any missing tools.
 # Do not upgrade unrelated formulae or run user config.
-have brew || { echo 'Homebrew not found. Run --install first.' >&2; exit 1; }
-export NONINTERACTIVE=1 HOMEBREW_NO_AUTO_UPDATE=1
 brew update
 # A broken package database is an error, not a list of missing tools.
 brew list --formula >/dev/null
@@ -15,12 +13,9 @@ for item in "${requirements[@]}"; do
   printf '\n##### %s update #####\n' "$formula"
   if brew list --formula --versions "$formula" >/dev/null 2>&1; then
     brew upgrade --formula "$formula"
-  elif [[ "$formula" == gh ]]; then
-    install_tool "GitHub CLI (Octo)" gh
   else
     echo 'Not installed through Homebrew; skipped.'
   fi
   printf '##### end %s update #####\n' "$formula"
 done
-echo 'Package update complete. Other missing tools and system packages were left alone; applying repo configs next.'
-echo 'Neovim plugins are installed from the applied config when Neovim starts.'
+echo 'Package update complete. Installing missing tools next.'
