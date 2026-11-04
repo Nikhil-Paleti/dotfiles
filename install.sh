@@ -2,7 +2,7 @@
 # Install missing tools and apply repo Neovim and tmux configs from the repo.
 # Usage: bash install.sh [--install|--update|--help]
 # --install installs missing tools and replaces Neovim and tmux configs.
-# --update upgrades installed managed Homebrew tools and replaces both configs.
+# --update upgrades managed Homebrew tools, adds gh if missing, and replaces both configs.
 # No argument shows help. Run as a normal user; system setup may request sudo.
 set -euo pipefail
 DOTFILES_ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"

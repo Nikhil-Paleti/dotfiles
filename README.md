@@ -18,6 +18,8 @@ tmux uses the repo [config](config/tmux/tmux.conf) at `~/.tmux.conf`: Ctrl+A pre
 
 Carbonfox is the default Neovim theme. Open `nvim` to install editor plugins, then run `:LazyHealth` and `:checkhealth mason`.
 
+For Octo, run `gh auth status` and, if needed, `gh auth login` once. Then use `:Octo pr list` and `:checkhealth octo` in Neovim.
+
 On WSL, the current-terminal command is normally:
 
 ```sh
@@ -35,7 +37,7 @@ git pull --ff-only
 bash install.sh --update
 ```
 
-Upgrades installed Homebrew packages from the [tool list](scripts/components.sh), then replaces the installed Neovim and tmux configs with the versions in this checkout. Missing system tools are not installed. Restart Neovim so Lazy can install newly added plugins, including Nightfox for Carbonfox. Existing tmux servers need `tmux source-file ~/.tmux.conf` to reload.
+Upgrades installed Homebrew packages from the [tool list](scripts/components.sh), then replaces the installed Neovim and tmux configs with the versions in this checkout. GitHub CLI (`gh`) is installed if missing for Octo; other missing system tools are left alone. Restart Neovim so Lazy can install newly added plugins, including Nightfox for Carbonfox. Existing tmux servers need `tmux source-file ~/.tmux.conf` to reload.
 
 ## Configuration ownership
 
