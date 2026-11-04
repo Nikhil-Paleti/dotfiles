@@ -8,7 +8,7 @@ if ! nvim --headless -u NONE -i NONE --noplugin -n \
   echo 'Required: Neovim >= 0.11.2 built with LuaJIT, and a working headless startup.' >&2
   echo 'Upgrade Neovim with its current package manager, or explicitly install a compatible build.' >&2
   echo 'For Homebrew: brew install neovim (or brew upgrade neovim if already installed).' >&2
-  echo 'Check command -v nvim and nvim --version, then rerun bash install.sh --install.' >&2
+  echo 'Check command -v nvim and nvim --version, then rerun bash install.sh.' >&2
   echo 'Neovim config has not been replaced by this run.' >&2
   exit 1
 fi
