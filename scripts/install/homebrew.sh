@@ -11,17 +11,19 @@ fi
 have brew || { echo 'Homebrew unavailable after installation.' >&2; exit 1; }
 # Add Homebrew to future shells without replacing existing startup content.
 case "${SHELL##*/}" in
-  zsh) profiles=("${ZDOTDIR:-$HOME}/.zprofile" "${ZDOTDIR:-$HOME}/.zshrc") ;;
+  zsh) profiles=("${ZDOTDIR:-$HOME}/.zprofile") ;;
   bash)
     login_profile="$HOME/.profile"
     [[ ! -f "$HOME/.bash_login" ]] || login_profile="$HOME/.bash_login"
     [[ ! -f "$HOME/.bash_profile" ]] || login_profile="$HOME/.bash_profile"
-    profiles=("$login_profile" "$HOME/.bashrc")
+    profiles=("$login_profile" "$HOME/.bashrc" "${ZDOTDIR:-$HOME}/.zprofile")
     ;;
   *) echo 'Automatic Homebrew setup supports bash and zsh.' >&2; exit 1 ;;
 esac
-printf -v shellenv_line 'eval "$("%s" shellenv)"' "$(command -v brew)"
 for profile in "${profiles[@]}"; do
+  shellenv_shell=bash
+  [[ "$profile" != "${ZDOTDIR:-$HOME}/.zprofile" ]] || shellenv_shell=zsh
+  printf -v shellenv_line 'eval "$(%q shellenv %s)"' "$(command -v brew)" "$shellenv_shell"
   if ! grep -Eq '^[[:space:]]*eval[[:space:]].*shellenv' "$profile" 2>/dev/null; then
     mkdir -p "$(dirname "$profile")"
     printf '\n%s\n' "$shellenv_line" >> "$profile"

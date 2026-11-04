@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install missing tools and apply repo Neovim, tmux, and zsh configs.
 # Usage: bash install.sh [--install|--update|--help]
-# --install installs missing tools and applies the repo configs.
+# --install installs missing tools, applies configs, and sets zsh as the login shell.
 # --update upgrades managed Homebrew tools, adds gh/zsh setup if missing, and applies configs.
 # No argument shows help. Run as a normal user; system setup may request sudo.
 set -euo pipefail
@@ -40,7 +40,9 @@ echo 'Applying Neovim and tmux configs without backups; local-only edits will be
 source "$DOTFILES_ROOT/scripts/install/tmux.sh"
 source "$DOTFILES_ROOT/scripts/install/lazyvim.sh"
 printf '\nRepo Neovim, tmux, and zsh configs applied.\n'
-source "$DOTFILES_ROOT/scripts/install/default-shell.sh"
+if [[ "$mode" == install ]]; then
+  source "$DOTFILES_ROOT/scripts/install/default-shell.sh"
+fi
 echo 'Run zsh to use it now; exit returns to the previous shell.'
 if [[ "$mode" == install ]]; then
   echo 'Homebrew is configured for future shells. Open a new terminal, or run this in the current one:'

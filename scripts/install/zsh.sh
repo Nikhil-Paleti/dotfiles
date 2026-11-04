@@ -23,7 +23,7 @@ fi
   printf '%s\n' "$zsh_marker"
   printf 'export HOMEBREW_PREFIX=%q\n' "$brew_prefix"
   # Explicit zsh output also works when this Bash installer was launched from Bash.
-  printf 'eval "$(%q shellenv zsh)"\n' "$(command -v brew)"
+  printf '[[ "$PATH:" == "$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:"* ]] || eval "$(%q shellenv zsh)"\n' "$(command -v brew)"
   cat "$DOTFILES_ROOT/config/zsh/zshrc"
 } > "$_dotfiles_download_dir/zshrc"
 mkdir -p "$(dirname "$zsh_config")" "$(dirname "$zshrc")"
