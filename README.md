@@ -1,6 +1,6 @@
 # Dotfiles
 
-Personal LazyVim and tmux configuration and a Bash installer for command-line tools.
+Personal LazyVim and tmux configuration and a Bash installer for command-line tools, including TUIOS.
 
 ## Install or update
 
@@ -13,6 +13,8 @@ bash install.sh
 ```
 
 Use the same command every time. It upgrades installed Homebrew packages from the [tool list](scripts/components.sh), installs missing tools, and applies the repo Neovim and tmux configs. Existing commands from other package managers are reused, not upgraded or replaced. Homebrew is installed if needed and set up automatically for future bash and zsh sessions. The installer cannot change the PATH of the terminal that launched it: open a new terminal, or run the exact `eval` command printed at the end. Your default shell is unchanged.
+
+[TUIOS](https://tuios.dev/docs/getting-started) is installed and updated through the Homebrew core `tuios` formula on macOS and Linux, including ARM64. Run `tuios` to launch it. It keeps its own defaults and any existing user config; the installer does not auto-start it or change your shell. TUIOS uses Ctrl+B as its default prefix. tmux remains available alongside it.
 
 tmux uses the repo [config](config/tmux/tmux.conf) at `~/.tmux.conf`: Ctrl+A prefix, mouse support, numbering from 1, Vim-style pane navigation/resizing, and Prefix+r to reload. Any XDG tmux config is left untouched; `~/.tmux.conf` takes precedence. Existing servers keep their current settings until you explicitly load the new config.
 
