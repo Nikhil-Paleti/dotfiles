@@ -25,6 +25,7 @@ export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_UPGRADE=1
 source "$DOTFILES_ROOT/scripts/update.sh"
 source "$DOTFILES_ROOT/scripts/install/core.sh"
 install_tool "tmux" tmux
+install_tool "TUIOS" tuios
 source "$DOTFILES_ROOT/scripts/install/neovim.sh"
 source "$DOTFILES_ROOT/scripts/install/search.sh"
 source "$DOTFILES_ROOT/scripts/install/runtimes.sh"
