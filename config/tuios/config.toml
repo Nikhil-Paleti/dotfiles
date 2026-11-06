@@ -16,3 +16,6 @@ prefix_jump_notif = ["f3"]
 prefix_keybinds = ["f2"]
 # Ctrl+A, Ctrl+A sends a literal Ctrl+A to the pane (shell beginning-of-line).
 send_prefix = ["ctrl+a"]
+
+[appearance.sidebar]
+enabled = false
