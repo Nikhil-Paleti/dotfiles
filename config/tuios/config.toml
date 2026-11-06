@@ -1,0 +1,18 @@
+# Shared TUIOS configuration; install.sh replaces the installed copy on every run.
+# Unset options retain the installed version defaults.
+
+[keybindings]
+leader_key = "ctrl+a"
+# One prefix per action: do not swallow letters typed just after navigation.
+repeat = []
+
+[keybindings.prefix_mode]
+terminal_focus_left = ["h", "left"]
+terminal_focus_down = ["j", "down"]
+terminal_focus_up = ["k", "up"]
+terminal_focus_right = ["l", "right"]
+# Preserve the commands displaced by j/k; uppercase J/K still navigate agents.
+prefix_jump_notif = ["f3"]
+prefix_keybinds = ["f2"]
+# Ctrl+A, Ctrl+A sends a literal Ctrl+A to the pane (shell beginning-of-line).
+send_prefix = ["ctrl+a"]

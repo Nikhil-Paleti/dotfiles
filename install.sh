@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install missing tools, update managed tools, and apply repo Neovim/tmux configs.
+# Install missing tools, update managed tools, and apply repo Neovim/tmux/TUIOS configs.
 # Usage: bash install.sh [--help]
 # Run as a normal user; system setup may request sudo. Your default shell is unchanged.
 set -euo pipefail
@@ -32,8 +32,9 @@ source "$DOTFILES_ROOT/scripts/install/runtimes.sh"
 source "$DOTFILES_ROOT/scripts/install/formatters.sh"
 echo 'Applying repo configs without backups; local-only edits will be overwritten.'
 source "$DOTFILES_ROOT/scripts/install/tmux.sh"
+source "$DOTFILES_ROOT/scripts/install/tuios.sh"
 source "$DOTFILES_ROOT/scripts/install/lazyvim.sh"
-printf '\nRepo Neovim and tmux configs applied.\n'
+printf '\nRepo Neovim, tmux, and TUIOS configs applied.\n'
 echo 'Homebrew is configured for future shells. Open a new terminal, or run this in the current one:'
 printf 'eval "$("%s" shellenv)"\n' "$(command -v brew)"
 echo 'Start nvim to install plugins, then run :LazyHealth. Language extras remain feature-specific.'
