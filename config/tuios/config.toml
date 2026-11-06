@@ -19,3 +19,6 @@ send_prefix = ["ctrl+a"]
 
 [appearance.sidebar]
 enabled = false
+
+[startup]
+tiled = true
