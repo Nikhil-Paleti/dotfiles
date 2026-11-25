@@ -13,3 +13,7 @@ install_tool "GitHub CLI" gh
 ##### curl install #####
 install_tool "curl" curl
 ##### end curl install #####
+
+##### bazelisk install #####
+install_tool "bazelisk" bazelisk
+##### end bazelisk install #####
