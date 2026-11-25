@@ -1,4 +1,4 @@
-# Install missing Tree-sitter CLI, StyLua, shfmt, and ShellCheck tools.
+# Install missing Tree-sitter CLI, StyLua, shfmt, ShellCheck, and Ruff tools.
 ##### Tree-sitter CLI install #####
 install_tool "Tree-sitter CLI" tree-sitter
 ##### end Tree-sitter CLI install #####
@@ -14,3 +14,7 @@ install_tool "shfmt" shfmt
 ##### ShellCheck install #####
 install_tool "ShellCheck" shellcheck
 ##### end ShellCheck install #####
+
+##### Ruff install #####
+install_tool "Ruff" ruff
+##### end Ruff install #####
