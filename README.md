@@ -14,7 +14,9 @@ bash install.sh
 
 Use the same command every time. It upgrades installed Homebrew packages from the [tool list](scripts/components.sh), installs missing tools, and applies the repo Neovim config. Existing commands from other package managers are reused, not upgraded or replaced. Homebrew is installed if needed and set up automatically for future bash and zsh sessions. Neovim's Mason `bin` directory is also added to `PATH` in `~/.bashrc` or `~/.zshrc` (after Homebrew, once, without duplicates), so tools reused from Mason, such as `ruff`, work in the terminal too. The installer cannot change the PATH of the terminal that launched it: open a new terminal, or run the exact `eval` command printed at the end. Your default shell is unchanged.
 
-Carbonfox is the default Neovim theme. Open `nvim` to install editor plugins, then run `:LazyHealth` and `:checkhealth mason`.
+Carbonfox is the default Neovim theme, with a pure black background for OLED screens and more saturated accent colors (tune `pop` in `lua/plugins/carbonfox.lua`). The start screen (`nvim` or `nvim .`) shows the folder's recent files and the repo status with its jj bookmark or git branch; the file explorer opens with `Space e`. Open `nvim` to install editor plugins, then run `:LazyHealth` and `:checkhealth mason`.
+
+Neovim has Python, markdown, and Bazel support (`BUILD`, `.bzl`, and `.bazelrc` files). Nothing is formatted on save; format the current file with `Space c f`. On Linux, the installer adds ICU (`libicuN`), which the markdown language server needs. Yanks use the OSC 52 clipboard, so they reach the clipboard of whatever terminal you view Neovim in, including over SSH.
 
 For Octo, run `gh auth status` and, if needed, `gh auth login` once. Then use `:Octo pr list` and `:checkhealth octo` in Neovim.
 
