@@ -1,89 +1,55 @@
--- Start screen: mountains under a night sky over a moonlit lake, this folder's recent
--- files, and the repo's status with its bookmark (jj) or branch (git).
+-- Start screen: a pixel-art landscape picked at random each time Neovim starts (see
+-- lua/scenes/), this folder's recent files, and the repo's status with its bookmark (jj) or
+-- branch (git).
 
--- Large scene: only for very large windows.
-local art_large = {
-  "      .            *                  .                  *          .",
-  "  *          .              .                    ☾               .",
-  "                 .                  *                      .           *",
-  "         .                .                .         *",
-  "              /\\                                          /\\",
-  "             /  \\                  /\\                    /  \\",
-  "            /    \\        /\\      /  \\        /\\        /    \\",
-  "           /      \\      /  \\    /    \\      /  \\      /      \\",
-  "          /        \\    /    \\  /      \\    /    \\    /        \\",
-  "  _______/          \\__/      \\/        \\__/      \\__/          \\__________",
-  "  ~    ~     ~   ~       ~    ~     ~       ~    ☾    ~     ~     ~   ~",
-  "     ~    ~        ~   ~     ~    ~    ~      ~       ~   ~        ~      ~",
-  "  ~     ~    ~  ~        ~       ~     ~   ~      ~        ~    ~     ~",
-}
+-- One landscape and variation per Neovim session, so resizing keeps the same picture.
+-- Set vim.g.dashboard_scene to a name from lua/scenes/init.lua to always show that one.
+math.randomseed(vim.uv.hrtime())
+local scene_names = require("scenes").names
+local scene_name = scene_names[math.random(#scene_names)]
+local scene_seed = math.random(1, 100000)
 
--- Medium scene: the usual size.
-local art_medium = {
-  "     .          *              .               *        .",
-  "  *        .             .              ☾            .",
-  "              .               *                .          *",
-  "           /\\                                    /\\",
-  "          /  \\             /\\                   /  \\",
-  "         /    \\      /\\   /  \\      /\\         /    \\",
-  "  ______/      \\____/  \\_/    \\____/  \\_______/      \\______",
-  "  ~   ~    ~  ~     ~    ~   ~     ~    ☾   ~    ~   ~    ~",
-  "     ~   ~      ~    ~     ~    ~    ~     ~    ~      ~",
-}
+-- The scene is drawn with "▀" (upper half block): each character cell shows two pixels, the
+-- top one as the text color and the bottom one as the background color.
+local pixel_hl = {} -- "rrggbb_rrggbb" -> highlight group name, created on first use
 
--- Small scene for narrow or short windows.
-local art_small = {
-  "      .        *          .            *      ",
-  "            *          .        *        ☾    ",
-  "       /\\        /\\                 .        ",
-  "      /  \\  /\\  /  \\      /\\                 ",
-  "   __/    \\/  \\/    \\____/  \\________________",
-  "   ~  ~ ~   ~    ~  ~  ~   ~  ~ ~  ~  ~  ☾ ~  ",
-  "     ~   ~   ~   ~     ~   ~    ~    ~    ~  ",
-}
-
--- Each character class gets its own color; spaces take no color.
-local char_hl = {
-  ["*"] = "DashboardStar",
-  ["."] = "DashboardStar",
-  ["☾"] = "DashboardMoon",
-  ["/"] = "DashboardMountain",
-  ["\\"] = "DashboardMountain",
-  ["_"] = "DashboardMountain",
-  ["~"] = "DashboardWater",
-}
-
-local function set_colors()
-  local hl = vim.api.nvim_set_hl
-  hl(0, "DashboardStar", { fg = "#f2f4f8" })
-  hl(0, "DashboardMoon", { fg = "#ffd866" })
-  hl(0, "DashboardMountain", { fg = "#6b7a99" })
-  hl(0, "DashboardWater", { fg = "#2a6f9e" })
-end
-set_colors()
-vim.api.nvim_create_autocmd("ColorScheme", { callback = set_colors })
-
--- One dashboard line per art line, split into runs of same-colored characters.
-local function header_lines(art)
-  -- Pad every line to the same width, so centering keeps the columns lined up.
-  local width = 0
-  for _, line in ipairs(art) do
-    width = math.max(width, vim.fn.strdisplaywidth(line))
+local function hl_for(top, bottom)
+  local key = string.format("%02x%02x%02x_%02x%02x%02x", top[1], top[2], top[3], bottom[1], bottom[2], bottom[3])
+  local name = pixel_hl[key]
+  if not name then
+    name = "DashboardPixel_" .. key
+    vim.api.nvim_set_hl(0, name, {
+      fg = string.format("#%02x%02x%02x", top[1], top[2], top[3]),
+      bg = string.format("#%02x%02x%02x", bottom[1], bottom[2], bottom[3]),
+    })
+    pixel_hl[key] = name
   end
+  return name
+end
+-- A colorscheme change clears highlight groups; recreate them on the next draw.
+vim.api.nvim_create_autocmd("ColorScheme", {
+  callback = function()
+    pixel_hl = {}
+  end,
+})
+
+-- Render the scene at `cols` x `rows` cells and turn it into dashboard lines, merging runs of
+-- cells with the same pair of colors.
+local function scene_lines(cols, rows)
+  local px = require("scenes").render(vim.g.dashboard_scene or scene_name, cols, rows * 2, scene_seed)
   local lines = {}
-  for i, line in ipairs(art) do
-    line = line .. string.rep(" ", width - vim.fn.strdisplaywidth(line))
+  for r = 0, rows - 1 do
     local chunks, run, run_hl = {}, "", nil
-    for _, ch in ipairs(vim.fn.split(line, "\\zs")) do
-      local hl = char_hl[ch] or run_hl -- spaces join whatever run they're in
+    for x = 0, cols - 1 do
+      local hl = hl_for(px[2 * r][x], px[2 * r + 1][x])
       if hl ~= run_hl and run ~= "" then
         chunks[#chunks + 1] = { run, hl = run_hl }
         run = ""
       end
-      run, run_hl = run .. ch, hl
+      run, run_hl = run .. "▀", hl
     end
     chunks[#chunks + 1] = { run, hl = run_hl }
-    lines[#lines + 1] = { text = chunks, align = "center", padding = i == #art and 1 or 0 }
+    lines[#lines + 1] = { text = chunks, align = "center", padding = r == rows - 1 and 1 or 0 }
   end
   return lines
 end
@@ -103,20 +69,17 @@ fi
 exec sleep infinity
 ]]
 
--- Called on every redraw (snacks redraws on resize), so the art follows the window size.
--- It also sets the dashboard's column width to fit the chosen art.
+-- Called on every redraw (snacks redraws on resize), so the scene follows the window size.
+-- It also sets the dashboard's column width to fit the scene.
 local function header(dashboard)
   local size = dashboard._size or { width = vim.o.columns, height = vim.o.lines }
-  local art
-  if size.width >= 200 and size.height >= 55 then
-    art = art_large
-  elseif size.width >= 70 and size.height >= 30 then
-    art = art_medium
-  elseif size.width >= 50 then
-    art = art_small
+  if size.width < 40 or size.height < 20 then
+    return {}
   end
-  dashboard.opts.width = art == art_large and 76 or 62 -- snacks default: 60
-  return art and header_lines(art) or {}
+  local cols = math.min(76, size.width - 4)
+  local rows = math.max(8, math.min(16, math.floor(size.height * 0.32)))
+  dashboard.opts.width = math.max(cols, 60) -- snacks default: 60
+  return scene_lines(cols, rows)
 end
 
 local function in_repo()
