@@ -44,6 +44,10 @@ else
       brew install "$formula"
     fi
   done
+  # compinit (added to ~/.zshrc below) rejects completion folders other users can write to and
+  # asks "Ignore insecure directories?" on every new shell; Homebrew's share folder often is.
+  chmod -R go-w "$(brew --prefix)/share"
+  echo "Removed group/other write access from $(brew --prefix)/share for compinit."
 fi
 block_end "zsh plugins"
 ##### end zsh plugins install #####
