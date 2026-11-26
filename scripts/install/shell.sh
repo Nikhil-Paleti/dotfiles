@@ -1,5 +1,5 @@
-# Shell extras: Atuin (history search), Starship (prompt), and ble.sh (bash only: suggestions
-# and highlighting).
+# Shell extras: Atuin (history search), Starship (prompt), and suggestions plus syntax
+# highlighting: ble.sh for bash, zsh-autosuggestions and zsh-syntax-highlighting for zsh.
 # Their startup lines are added to ~/.bashrc or ~/.zshrc only when missing.
 install_tool "Atuin" atuin
 install_tool "Starship" starship
@@ -28,6 +28,25 @@ else
 fi
 block_end ble.sh
 ##### end ble.sh install #####
+
+##### zsh plugins install #####
+# zsh only: suggestions as you type (Atuin's zsh init makes them come from Atuin) and syntax
+# highlighting, the zsh equivalents of ble.sh. Homebrew formulas without a command, so they
+# are installed and upgraded here rather than through the tool list.
+block_start "zsh plugins"
+if [[ "${SHELL##*/}" != zsh ]]; then
+  echo "Login shell is ${SHELL##*/}, not zsh; skipped."
+else
+  for formula in zsh-autosuggestions zsh-syntax-highlighting; do
+    if brew list --formula --versions "$formula" >/dev/null 2>&1; then
+      brew upgrade --formula "$formula"
+    else
+      brew install "$formula"
+    fi
+  done
+fi
+block_end "zsh plugins"
+##### end zsh plugins install #####
 
 ##### Shell config #####
 block_start "Shell config"
@@ -69,8 +88,17 @@ case "${SHELL##*/}" in
     add_rc_line "$HOME/.bashrc" 'ble-attach' '[[ ! ${BLE_VERSION-} ]] || ble-attach'
     ;;
   zsh)
-    add_rc_line "${ZDOTDIR:-$HOME}/.zshrc" 'atuin init zsh' 'eval "$(atuin init zsh)"'
-    add_rc_line "${ZDOTDIR:-$HOME}/.zshrc" 'starship init zsh' 'eval "$(starship init zsh)"'
+    zshrc="${ZDOTDIR:-$HOME}/.zshrc"
+    # Order matters: completion setup, suggestions, Atuin (which points suggestions at its
+    # history), Starship, and syntax highlighting last, as its docs require.
+    add_rc_line "$zshrc" 'compinit' 'autoload -Uz compinit && compinit'
+    add_rc_line "$zshrc" "menu select" "zstyle ':completion:*' menu select"
+    add_rc_line "$zshrc" 'zsh-autosuggestions\.zsh' \
+      '[[ -r "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"'
+    add_rc_line "$zshrc" 'atuin init zsh' 'eval "$(atuin init zsh)"'
+    add_rc_line "$zshrc" 'starship init zsh' 'eval "$(starship init zsh)"'
+    add_rc_line "$zshrc" 'zsh-syntax-highlighting\.zsh' \
+      '[[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"'
     ;;
   *) echo 'Shell setup supports bash and zsh.' >&2; exit 1 ;;
 esac

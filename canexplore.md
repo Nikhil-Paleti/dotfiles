@@ -47,8 +47,6 @@ and move it out of this list.
   self-hosted one (e.g. on the always-on Jetson).
 - **Atuin extras**: output capture (needs the daemon), and threads/agent hooks for AI coding
   sessions (the agent hooks edit `~/.claude/settings.json`).
-- **zsh on the Mac**: `zsh-autosuggestions` and `zsh-syntax-highlighting` to match what ble.sh
-  gives bash.
 
 ## Machine setup
 
