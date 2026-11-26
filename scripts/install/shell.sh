@@ -1,5 +1,6 @@
-# Shell extras: Atuin (history search), Starship (prompt), and suggestions plus syntax
-# highlighting: ble.sh for bash, zsh-autosuggestions and zsh-syntax-highlighting for zsh.
+# Shell extras: Atuin (history search), Starship (prompt), zoxide (z and zi jump to folders
+# you use often), and suggestions plus syntax highlighting: ble.sh for bash,
+# zsh-autosuggestions and zsh-syntax-highlighting for zsh.
 # Their startup lines are added to ~/.bashrc or ~/.zshrc only when missing.
 install_tool "Atuin" atuin
 
@@ -18,6 +19,7 @@ done
 block_end "Atuin agent history"
 ##### end Atuin agent history #####
 install_tool "Starship" starship
+install_tool "zoxide" zoxide
 
 ##### ble.sh install #####
 # bash only: ble.sh is a bash line editor, so zsh users skip it. Not in Homebrew; the author
@@ -94,25 +96,53 @@ add_rc_line() {
     echo "Added to $rc: $line"
   fi
 }
+# Same, but a missing line goes just above the first line matching anchor (and above this
+# installer's comment over it), so a line that must stay last does. With no anchor, it is appended.
+add_rc_line_before() {
+  local rc="$1" pattern="$2" line="$3" anchor="$4" staged
+  if grep -Eq "$pattern" "$rc" 2>/dev/null || ! grep -Eq "$anchor" "$rc" 2>/dev/null; then
+    add_rc_line "$rc" "$pattern" "$line"
+    return
+  fi
+  # shellcheck disable=SC2154 # _dotfiles_download_dir is set by scripts/lib/temp.sh
+  staged="$_dotfiles_download_dir/rc-insert"
+  ANCHOR="$anchor" LINE="$line" awk '
+    { lines[NR] = $0 }
+    END {
+      marker = "# Added by dotfiles install.sh"
+      for (i = 1; i <= NR; i++) if (lines[i] ~ ENVIRON["ANCHOR"]) break
+      at = (i > 1 && lines[i - 1] == marker) ? i - 1 : i
+      for (j = 1; j <= NR; j++) {
+        if (j == at) printf "%s\n%s\n\n", marker, ENVIRON["LINE"]
+        print lines[j]
+      }
+    }' "$rc" >"$staged"
+  # Write through the existing file so its permissions and any symlink stay as they are.
+  cat "$staged" >"$rc"
+  echo "Added to $rc, above the line it must precede: $line"
+}
 # Single quotes: written literally, expanded when the shell starts.
 # shellcheck disable=SC2016
 case "${SHELL##*/}" in
   bash)
-    # Order matters: load ble.sh, then Atuin (which hooks into ble.sh) and Starship, then switch
-    # ble.sh on. (Starship added after an existing ble-attach line still works, but each new
-    # terminal's first prompt is the plain one.)
+    # Order matters: load ble.sh, then Atuin (which hooks into ble.sh), Starship and zoxide
+    # (whose docs ask for it at the end), then switch ble.sh on. (Starship added after an
+    # existing ble-attach line still works, but each new terminal's first prompt is the plain
+    # one; zoxide is put above an existing ble-attach line instead.)
     # Editor for jj, git, gh, crontab, ...: skipped if the rc file already sets EDITOR.
     add_rc_line "$HOME/.bashrc" '^[[:space:]]*(export[[:space:]]+)?EDITOR=' 'export EDITOR=nvim VISUAL=nvim'
     add_rc_line "$HOME/.bashrc" 'blesh/ble\.sh' \
       '[[ $- == *i* && -f "${XDG_DATA_HOME:-$HOME/.local/share}/blesh/ble.sh" ]] && source -- "${XDG_DATA_HOME:-$HOME/.local/share}/blesh/ble.sh" --attach=none'
     add_rc_line "$HOME/.bashrc" 'atuin init bash' 'eval "$(atuin init bash)"'
     add_rc_line "$HOME/.bashrc" 'starship init bash' 'eval "$(starship init bash)"'
+    add_rc_line_before "$HOME/.bashrc" 'zoxide init' 'eval "$(zoxide init bash)"' 'ble-attach'
     add_rc_line "$HOME/.bashrc" 'ble-attach' '[[ ! ${BLE_VERSION-} ]] || ble-attach'
     ;;
   zsh)
     zshrc="${ZDOTDIR:-$HOME}/.zshrc"
     # Order matters: completion setup, suggestions, Atuin (which points suggestions at its
-    # history), Starship, and syntax highlighting last, as its docs require.
+    # history), Starship, zoxide (after compinit, near the end as its docs ask), and syntax
+    # highlighting last, as its docs require.
     add_rc_line "$zshrc" '^[[:space:]]*(export[[:space:]]+)?EDITOR=' 'export EDITOR=nvim VISUAL=nvim'
     add_rc_line "$zshrc" 'compinit' 'autoload -Uz compinit && compinit'
     add_rc_line "$zshrc" "menu select" "zstyle ':completion:*' menu select"
@@ -120,6 +150,7 @@ case "${SHELL##*/}" in
       '[[ -r "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"'
     add_rc_line "$zshrc" 'atuin init zsh' 'eval "$(atuin init zsh)"'
     add_rc_line "$zshrc" 'starship init zsh' 'eval "$(starship init zsh)"'
+    add_rc_line_before "$zshrc" 'zoxide init' 'eval "$(zoxide init zsh)"' 'zsh-syntax-highlighting\.zsh'
     add_rc_line "$zshrc" 'zsh-syntax-highlighting\.zsh' \
       '[[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"'
     ;;

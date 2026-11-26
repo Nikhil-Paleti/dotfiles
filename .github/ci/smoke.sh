@@ -16,6 +16,7 @@ echo '--- Tools'
 nvim --version | head -n 1
 atuin --version
 starship --version | head -n 1
+zoxide --version
 
 echo '--- Configs'
 cmp "$repo/config/nvim/init.lua" "$config_home/nvim/init.lua"
@@ -29,9 +30,12 @@ echo "--- New ${SHELL##*/} shell"
 # stdin is not a terminal here, so line editors such as ble.sh may print warnings;
 # only the PATH lookups below decide the result.
 # shellcheck disable=SC2016 # $tool expands in the new shell
-found=$("$SHELL" -ic 'for tool in nvim atuin starship; do command -v "$tool"; done' </dev/null 2>/dev/null || true)
+found=$("$SHELL" -ic 'for tool in nvim atuin starship zoxide; do command -v "$tool"; done
+  type z zi >/dev/null 2>&1 && echo zoxide-commands' </dev/null 2>/dev/null || true)
 printf '%s\n' "$found"
-for tool in nvim atuin starship; do
+for tool in nvim atuin starship zoxide; do
   grep -q "/$tool\$" <<<"$found" || { echo "$tool is not on PATH in a new ${SHELL##*/} shell." >&2; exit 1; }
 done
+# zoxide's init line ran: z and zi exist. Plain cd is left as the builtin.
+grep -qx zoxide-commands <<<"$found" || { echo "z and zi are not defined in a new ${SHELL##*/} shell." >&2; exit 1; }
 echo 'Smoke checks passed.'
