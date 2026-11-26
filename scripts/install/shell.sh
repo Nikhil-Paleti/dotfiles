@@ -81,6 +81,8 @@ case "${SHELL##*/}" in
     # Order matters: load ble.sh, then Atuin (which hooks into ble.sh) and Starship, then switch
     # ble.sh on. (Starship added after an existing ble-attach line still works, but each new
     # terminal's first prompt is the plain one.)
+    # Editor for jj, git, gh, crontab, ...: skipped if the rc file already sets EDITOR.
+    add_rc_line "$HOME/.bashrc" '^[[:space:]]*(export[[:space:]]+)?EDITOR=' 'export EDITOR=nvim VISUAL=nvim'
     add_rc_line "$HOME/.bashrc" 'blesh/ble\.sh' \
       '[[ $- == *i* && -f "${XDG_DATA_HOME:-$HOME/.local/share}/blesh/ble.sh" ]] && source -- "${XDG_DATA_HOME:-$HOME/.local/share}/blesh/ble.sh" --attach=none'
     add_rc_line "$HOME/.bashrc" 'atuin init bash' 'eval "$(atuin init bash)"'
@@ -91,6 +93,7 @@ case "${SHELL##*/}" in
     zshrc="${ZDOTDIR:-$HOME}/.zshrc"
     # Order matters: completion setup, suggestions, Atuin (which points suggestions at its
     # history), Starship, and syntax highlighting last, as its docs require.
+    add_rc_line "$zshrc" '^[[:space:]]*(export[[:space:]]+)?EDITOR=' 'export EDITOR=nvim VISUAL=nvim'
     add_rc_line "$zshrc" 'compinit' 'autoload -Uz compinit && compinit'
     add_rc_line "$zshrc" "menu select" "zstyle ':completion:*' menu select"
     add_rc_line "$zshrc" 'zsh-autosuggestions\.zsh' \

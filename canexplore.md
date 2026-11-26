@@ -5,8 +5,6 @@ and move it out of this list.
 
 ## Fixes for tools already here
 
-- **`EDITOR=nvim`**: `EDITOR` is unset, so `jj describe`, `git commit`, `gh pr create`, and
-  `crontab -e` open nano. One line in the shell rc file.
 - **[delta](https://github.com/dandavison/delta)**: syntax-highlighted, side-by-side-capable
   diffs with line numbers for `git diff`, `git log -p`, `jj diff`, and lazygit. Set it as the
   pager in git and jj config.
