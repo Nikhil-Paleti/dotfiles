@@ -1,7 +1,7 @@
 # Install Rust and cargo with rustup, the official per-user installer (no sudo), or update
 # them when rustup already manages them. A Rust install that rustup does not manage (Homebrew's
-# rust formula, apt's cargo) is reused, not upgraded or replaced: rustup refuses to install
-# beside one. Then put cargo's bin directory on PATH for future bash and zsh sessions.
+# rust formula, apt's cargo) is reused, not upgraded or replaced: rustup warns against
+# installing beside one. Then put cargo's bin directory on PATH for future bash and zsh sessions.
 ##### Rust install #####
 block_start Rust
 cargo_home="${CARGO_HOME:-$HOME/.cargo}"
@@ -20,7 +20,11 @@ if have rustup; then
   fi
 elif have cargo || have rustc; then
   rust_path=$(command -v cargo || command -v rustc)
-  if have brew && brew list --formula --versions rust >/dev/null 2>&1; then
+  if ! have cargo; then
+    echo "rustc is installed without cargo or rustup ($rust_path)." >&2
+    echo 'Install cargo with the same package manager, or remove that rustc so rustup can install both; then rerun.' >&2
+    exit 1
+  elif have brew && brew list --formula --versions rust >/dev/null 2>&1; then
     echo "Rust from Homebrew's rust formula is installed ($rust_path); reused, not upgraded."
     echo 'To switch to rustup: brew uninstall rust, then rerun bash install.sh.'
   else
@@ -36,7 +40,7 @@ else
   sh "$rustup_init" -y --no-modify-path --profile default --default-toolchain stable </dev/null
   case ":$PATH:" in *":$cargo_home/bin:"*) ;; *) export PATH="$cargo_home/bin:$PATH" ;; esac
 fi
-have cargo || { echo 'cargo is not on PATH after the Rust step; check rustup show, then rerun.' >&2; exit 1; }
+have cargo || { echo 'cargo is not on PATH after the rustup install; check rustup show, then rerun.' >&2; exit 1; }
 echo "Using $(cargo --version) at $(command -v cargo)."
 block_end Rust
 ##### end Rust install #####
