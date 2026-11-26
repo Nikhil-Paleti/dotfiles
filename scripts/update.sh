@@ -5,6 +5,7 @@ brew update
 # A broken package database is an error, not a list of missing tools.
 brew list --formula >/dev/null
 updated_formulae=':' 
+# shellcheck disable=SC2154 # requirements is set by scripts/components.sh
 for item in "${requirements[@]}"; do
   formula=${item#*:}
   # Node.js and npm share a formula: process it only once.

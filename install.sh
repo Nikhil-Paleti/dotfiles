@@ -3,7 +3,7 @@
 # Usage: bash install.sh [--help]
 # Run as a normal user; system setup may request sudo. Your default shell is unchanged.
 set -euo pipefail
-DOTFILES_ROOT="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES_ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly DOTFILES_ROOT
 [[ $# -le 1 ]] || { echo 'Only one argument is supported.' >&2; exit 2; }
 case "${1:-}" in
@@ -34,5 +34,6 @@ echo 'Applying repo configs without backups; local-only edits will be overwritte
 source "$DOTFILES_ROOT/scripts/install/lazyvim.sh"
 printf '\nRepo Neovim, Atuin, and shell configs applied.\n'
 echo 'Homebrew is configured for future shells. Open a new terminal, or run this in the current one:'
+# shellcheck disable=SC2016 # prints the command for the user to run
 printf 'eval "$("%s" shellenv)"\n' "$(command -v brew)"
 echo 'Start nvim to install plugins, then run :LazyHealth. Language extras remain feature-specific.'
