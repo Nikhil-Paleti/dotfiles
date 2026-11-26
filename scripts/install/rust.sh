@@ -13,10 +13,11 @@ fi
 if have rustup; then
   # Only a rustup that rustup-init installed can update itself; Homebrew's and apt's cannot.
   if [[ "$(command -v rustup)" == "$cargo_home/bin/rustup" ]]; then rustup self update; fi
-  if rustup default >/dev/null 2>&1; then
-    rustup update --no-self-update
-  else
+  # A rustup with no toolchain (Homebrew's rustup formula starts that way) gets stable as default.
+  if [[ "$(rustup toolchain list)" == 'no installed toolchains' ]] || ! rustup default >/dev/null 2>&1; then
     rustup default stable
+  else
+    rustup update --no-self-update
   fi
 elif have cargo || have rustc; then
   rust_path=$(command -v cargo || command -v rustc)
