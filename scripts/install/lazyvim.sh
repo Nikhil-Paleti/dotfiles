@@ -8,6 +8,7 @@ config="${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
 mkdir -p "$(dirname "$config")"
 _dotfiles_stage_dir=$(mktemp -d "${config}.install.XXXXXX")
 readonly _dotfiles_stage_dir
+# shellcheck disable=SC2154 # _dotfiles_cleanup_owner is set by scripts/lib/temp.sh
 printf '%s\n' "$_dotfiles_cleanup_owner" > "$_dotfiles_stage_dir/.dotfiles-installer-owner"
 cp -Rp "$source_config" "$_dotfiles_stage_dir/nvim"
 rm -rf -- "$config"

@@ -28,6 +28,7 @@ if [[ "${SHELL##*/}" != bash ]]; then
   echo "Login shell is ${SHELL##*/}, not bash; skipped."
 elif [[ -f "$blesh_dir/ble.sh" ]]; then
   # Quiet unless it fails: the updater prints download progress.
+  # shellcheck disable=SC2154 # _dotfiles_download_dir is set by scripts/lib/temp.sh
   if bash "$blesh_dir/ble.sh" --update </dev/null >"$_dotfiles_download_dir/blesh-update.log" 2>&1; then
     echo "Updated (or already current): $(bash "$blesh_dir/ble.sh" --version | head -n 1)"
   else

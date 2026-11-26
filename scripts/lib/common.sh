@@ -6,6 +6,7 @@ block_start() { printf '\n##### %s install #####\n' "$1"; }
 block_end() { printf '##### end %s install #####\n' "$1"; }
 install_tool() {
   local label="$1" command_name="$2" formula_name='' item
+  # shellcheck disable=SC2154 # requirements is set by scripts/components.sh
   for item in "${requirements[@]}"; do
     if [[ "${item%%:*}" == "$command_name" ]]; then formula_name=${item#*:}; break; fi
   done
