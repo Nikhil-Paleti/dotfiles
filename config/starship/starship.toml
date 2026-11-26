@@ -27,3 +27,7 @@ disabled = true
 # The project version from pyproject.toml/package.json isn't useful in the prompt.
 [package]
 disabled = true
+
+# Shows the python on PATH (Homebrew's), not the project's: Bazel brings its own Python.
+[python]
+disabled = true
