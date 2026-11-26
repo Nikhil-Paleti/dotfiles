@@ -1,7 +1,38 @@
 -- Start screen: mountains under a night sky over a moonlit lake, this folder's recent
 -- files, and the repo's status with its bookmark (jj) or branch (git).
 
-local art = {
+-- Large scene: only for very large windows.
+local art_large = {
+  "      .            *                  .                  *          .",
+  "  *          .              .                    ☾               .",
+  "                 .                  *                      .           *",
+  "         .                .                .         *",
+  "              /\\                                          /\\",
+  "             /  \\                  /\\                    /  \\",
+  "            /    \\        /\\      /  \\        /\\        /    \\",
+  "           /      \\      /  \\    /    \\      /  \\      /      \\",
+  "          /        \\    /    \\  /      \\    /    \\    /        \\",
+  "  _______/          \\__/      \\/        \\__/      \\__/          \\__________",
+  "  ~    ~     ~   ~       ~    ~     ~       ~    ☾    ~     ~     ~   ~",
+  "     ~    ~        ~   ~     ~    ~    ~      ~       ~   ~        ~      ~",
+  "  ~     ~    ~  ~        ~       ~     ~   ~      ~        ~    ~     ~",
+}
+
+-- Medium scene: the usual size.
+local art_medium = {
+  "     .          *              .               *        .",
+  "  *        .             .              ☾            .",
+  "              .               *                .          *",
+  "           /\\                                    /\\",
+  "          /  \\             /\\                   /  \\",
+  "         /    \\      /\\   /  \\      /\\         /    \\",
+  "  ______/      \\____/  \\_/    \\____/  \\_______/      \\______",
+  "  ~   ~    ~  ~     ~    ~   ~     ~    ☾   ~    ~   ~    ~",
+  "     ~   ~      ~    ~     ~    ~    ~     ~    ~      ~",
+}
+
+-- Small scene for narrow or short windows.
+local art_small = {
   "      .        *          .            *      ",
   "            *          .        *        ☾    ",
   "       /\\        /\\                 .        ",
@@ -33,7 +64,7 @@ set_colors()
 vim.api.nvim_create_autocmd("ColorScheme", { callback = set_colors })
 
 -- One dashboard line per art line, split into runs of same-colored characters.
-local function header_lines()
+local function header_lines(art)
   -- Pad every line to the same width, so centering keeps the columns lined up.
   local width = 0
   for _, line in ipairs(art) do
@@ -68,7 +99,25 @@ else
   printf '\033[35m %s\033[0m\n\n' "$(git branch --show-current)"
   git status --short --renames
 fi
+# Stay alive (quietly) so the terminal never prints "[Process exited 0]" under short output.
+exec sleep infinity
 ]]
+
+-- Called on every redraw (snacks redraws on resize), so the art follows the window size.
+-- It also sets the dashboard's column width to fit the chosen art.
+local function header(dashboard)
+  local size = dashboard._size or { width = vim.o.columns, height = vim.o.lines }
+  local art
+  if size.width >= 200 and size.height >= 55 then
+    art = art_large
+  elseif size.width >= 70 and size.height >= 30 then
+    art = art_medium
+  elseif size.width >= 50 then
+    art = art_small
+  end
+  dashboard.opts.width = art == art_large and 76 or 62 -- snacks default: 60
+  return art and header_lines(art) or {}
+end
 
 local function in_repo()
   return Snacks.git.get_root() ~= nil
@@ -80,7 +129,7 @@ return {
     opts = {
       dashboard = {
         sections = {
-          header_lines(),
+          header,
           { pane = 2, icon = " ", title = "Recent Files", padding = 1 },
           { pane = 2, section = "recent_files", cwd = true, limit = 8, indent = 2, padding = 1 },
           { pane = 2, icon = " ", title = "Repo Status", padding = 1, enabled = in_repo },
@@ -92,7 +141,7 @@ return {
             cmd = vim.trim(repo_status_cmd),
             height = 10,
             padding = 1,
-            ttl = 5 * 60,
+            ttl = 0, -- always fresh (snacks only caches output of commands that exit)
             indent = 3,
           },
           { section = "startup" },
