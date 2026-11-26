@@ -1,0 +1,27 @@
+# Atuin config (local only: no account, no sync).
+# Reference: https://docs.atuin.sh/latest/configuration/config/
+
+## Privacy: with no account and no update check, Atuin makes no network requests.
+update_check = false # Homebrew handles upgrades
+auto_sync = false # sync comes later
+
+## Search
+search_mode = "fuzzy"
+filter_mode = "global" # Ctrl+R starts with all history; press Ctrl+R again to narrow the scope
+workspaces = true # adds a "this repo" filter (git or jj root)
+
+## Up arrow: this terminal's own history, like plain bash but searchable
+filter_mode_shell_up_key_binding = "session"
+inline_height_shell_up_key_binding = 15 # a small panel under the prompt (Ctrl+R stays full screen)
+
+## Look
+style = "compact"
+inline_height = 0 # 0 = full screen (a number draws a panel that many lines tall)
+show_preview = true
+
+## Enter puts the command on the line to check or edit; press Enter again to run it.
+## (Tab does the same.) Set to true to run immediately instead.
+enter_accept = false
+
+## Never save commands that contain known secret formats (AWS, GitHub, Slack, API keys, ...).
+secrets_filter = true

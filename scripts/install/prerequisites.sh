@@ -8,7 +8,7 @@ if [[ "$os" == Darwin ]]; then
   fi
 else
   deps=()
-  for pair in cc:build-essential make:build-essential g++:build-essential curl:curl file:file git:git ps:procps unzip:unzip; do
+  for pair in cc:build-essential make:build-essential g++:build-essential curl:curl file:file git:git ps:procps unzip:unzip xz:xz-utils; do
     have "${pair%%:*}" || deps+=("${pair#*:}")
   done
   # marksman (Neovim's markdown language server) is a .NET app and crashes without ICU.
