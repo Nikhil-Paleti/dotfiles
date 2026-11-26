@@ -1,6 +1,7 @@
 # Install missing system build dependencies, requesting sudo only when needed.
 ##### Build prerequisites install #####
 printf '\n##### Build prerequisites install #####\n'
+# shellcheck disable=SC2154 # os is set by scripts/platform.sh
 if [[ "$os" == Darwin ]]; then
   if ! xcode-select -p >/dev/null 2>&1 || ! have cc || ! have make; then
     echo 'Installing Apple command-line tools requires its GUI. Run xcode-select --install, finish, then rerun.' >&2

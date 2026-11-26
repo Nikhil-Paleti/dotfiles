@@ -1,0 +1,67 @@
+# Lint the installer scripts, then run install.sh twice on macOS and Ubuntu:
+# the second run proves reruns are safe and leave shell startup files unchanged.
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        # Settings come from .shellcheckrc. -x lets install.sh follow the modules it sources.
+        run: |
+          shellcheck --version
+          git ls-files -z '*.sh' | xargs -0 shellcheck -x
+
+  install:
+    name: install (${{ matrix.os }}, ${{ matrix.shell }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            shell: bash
+          - os: macos-latest
+            shell: zsh
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      # The installer picks bash or zsh startup files from SHELL.
+      SHELL: /bin/${{ matrix.shell }}
+      # Homebrew's own switch for unattended installs (it also honors CI).
+      NONINTERACTIVE: '1'
+      HOMEBREW_NO_ANALYTICS: '1'
+      HOMEBREW_NO_ENV_HINTS: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: First install
+        run: bash install.sh
+
+      - name: Save shell startup files and configs
+        run: bash .github/ci/snapshot.sh "$RUNNER_TEMP/first-run"
+
+      - name: Second install (rerun)
+        run: bash install.sh
+
+      - name: Rerun changed nothing
+        run: |
+          bash .github/ci/snapshot.sh "$RUNNER_TEMP/second-run"
+          diff -r "$RUNNER_TEMP/first-run" "$RUNNER_TEMP/second-run"
+          echo 'Second run left startup files and configs unchanged.'
+
+      - name: Smoke checks
+        timeout-minutes: 10
+        run: bash .github/ci/smoke.sh

@@ -1,6 +1,7 @@
 # Install Homebrew as the current user, allowing its normal setup prompts.
 ##### Homebrew install #####
 printf '\n##### Homebrew install #####\n'
+# shellcheck disable=SC2154 # _dotfiles_download_dir is set by scripts/lib/temp.sh
 if ! have brew; then
   curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh -o "$_dotfiles_download_dir/homebrew.sh"
   /bin/bash "$_dotfiles_download_dir/homebrew.sh"
@@ -20,6 +21,7 @@ case "${SHELL##*/}" in
     ;;
   *) echo 'Automatic Homebrew setup supports bash and zsh.' >&2; exit 1 ;;
 esac
+# shellcheck disable=SC2016 # literal startup line; expands when the shell starts
 printf -v shellenv_line 'eval "$("%s" shellenv)"' "$(command -v brew)"
 for profile in "${profiles[@]}"; do
   if ! grep -Eq '^[[:space:]]*eval[[:space:]].*shellenv' "$profile" 2>/dev/null; then
