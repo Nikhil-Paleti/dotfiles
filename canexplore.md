@@ -13,8 +13,6 @@ and move it out of this list.
 
 ## New tools
 
-- **[zoxide](https://github.com/ajeetdsouza/zoxide)**: a `cd` that learns where you go.
-  `z gpu` jumps to `~/projects/gpu-programming`; `zi` fuzzy-picks. Good for deep monorepo paths.
 - **[bat](https://github.com/sharkdp/bat)**: `cat` with syntax highlighting, line numbers, and
   git change markers; also nicer file previews in fzf.
 - **[eza](https://github.com/eza-community/eza)**: modern `ls` with colors, Nerd Font icons,
