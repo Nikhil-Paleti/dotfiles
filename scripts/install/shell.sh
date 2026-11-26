@@ -2,6 +2,21 @@
 # highlighting: ble.sh for bash, zsh-autosuggestions and zsh-syntax-highlighting for zsh.
 # Their startup lines are added to ~/.bashrc or ~/.zshrc only when missing.
 install_tool "Atuin" atuin
+
+##### Atuin agent history #####
+# Record the shell commands AI coding agents run, tagged with the agent's name and hidden from
+# your own Ctrl+R/Up/suggestions (see them with: atuin search --author '$all-agent'). Atuin adds
+# a hook to each installed agent's own config and keeps its other settings; reruns change nothing.
+block_start "Atuin agent history"
+for agent in claude:claude-code codex:codex; do
+  if have "${agent%%:*}"; then
+    atuin setup --only --agent-history --agents "${agent#*:}" </dev/null
+  else
+    echo "${agent#*:} is not installed; skipped."
+  fi
+done
+block_end "Atuin agent history"
+##### end Atuin agent history #####
 install_tool "Starship" starship
 
 ##### ble.sh install #####
