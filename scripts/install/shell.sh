@@ -1,6 +1,8 @@
-# Shell extras: Atuin (history search) and ble.sh (bash only: suggestions and highlighting).
+# Shell extras: Atuin (history search), Starship (prompt), and ble.sh (bash only: suggestions
+# and highlighting).
 # Their startup lines are added to ~/.bashrc or ~/.zshrc only when missing.
 install_tool "Atuin" atuin
+install_tool "Starship" starship
 
 ##### ble.sh install #####
 # bash only: ble.sh is a bash line editor, so zsh users skip it. Not in Homebrew; the author
@@ -35,6 +37,12 @@ mkdir -p "$atuin_config_dir"
 cp "$DOTFILES_ROOT/config/atuin/config.toml" "$atuin_config_dir/config.toml"
 echo "Atuin config applied: $atuin_config_dir/config.toml"
 
+# Starship's config: the repo copy replaces the installed one.
+starship_config="${STARSHIP_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml}"
+mkdir -p "$(dirname "$starship_config")"
+cp "$DOTFILES_ROOT/config/starship/starship.toml" "$starship_config"
+echo "Starship config applied: $starship_config"
+
 # Shell startup lines: each is appended to ~/.bashrc or ~/.zshrc only if that file doesn't
 # already have it. Nothing else in the rc file is touched.
 add_rc_line() {
@@ -51,13 +59,19 @@ add_rc_line() {
 # shellcheck disable=SC2016
 case "${SHELL##*/}" in
   bash)
-    # Order matters: load ble.sh, then Atuin (which hooks into ble.sh), then switch ble.sh on.
+    # Order matters: load ble.sh, then Atuin (which hooks into ble.sh) and Starship, then switch
+    # ble.sh on. (Starship added after an existing ble-attach line still works, but each new
+    # terminal's first prompt is the plain one.)
     add_rc_line "$HOME/.bashrc" 'blesh/ble\.sh' \
       '[[ $- == *i* && -f "${XDG_DATA_HOME:-$HOME/.local/share}/blesh/ble.sh" ]] && source -- "${XDG_DATA_HOME:-$HOME/.local/share}/blesh/ble.sh" --attach=none'
     add_rc_line "$HOME/.bashrc" 'atuin init bash' 'eval "$(atuin init bash)"'
+    add_rc_line "$HOME/.bashrc" 'starship init bash' 'eval "$(starship init bash)"'
     add_rc_line "$HOME/.bashrc" 'ble-attach' '[[ ! ${BLE_VERSION-} ]] || ble-attach'
     ;;
-  zsh) add_rc_line "${ZDOTDIR:-$HOME}/.zshrc" 'atuin init zsh' 'eval "$(atuin init zsh)"' ;;
+  zsh)
+    add_rc_line "${ZDOTDIR:-$HOME}/.zshrc" 'atuin init zsh' 'eval "$(atuin init zsh)"'
+    add_rc_line "${ZDOTDIR:-$HOME}/.zshrc" 'starship init zsh' 'eval "$(starship init zsh)"'
+    ;;
   *) echo 'Shell setup supports bash and zsh.' >&2; exit 1 ;;
 esac
 block_end "Shell config"

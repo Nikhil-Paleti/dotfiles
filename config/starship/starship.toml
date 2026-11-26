@@ -1,0 +1,29 @@
+# Starship prompt. Reference: https://starship.rs/config/
+
+# jj keeps git "detached", which the git branch module would show as `HEAD (abc1234)`.
+# Hide it there; the jj module below shows the change and nearest bookmark instead.
+[git_branch]
+only_attached = true
+
+# jj repos: working-copy change ID and the nearest bookmark at or below it, like `trtwltsw main`.
+# --ignore-working-copy keeps it fast (~20 ms) and never snapshots or locks the repo.
+[custom.jj]
+description = "jj working-copy change and nearest bookmark"
+detect_folders = [".jj"]
+shell = ["bash", "--noprofile", "--norc"]
+command = '''
+id=$(jj log --no-graph --ignore-working-copy --color never -r @ -T 'change_id.shortest(8)' 2>/dev/null)
+bm=$(jj log --no-graph --ignore-working-copy --color never -r 'latest(::@ & bookmarks())' -T 'local_bookmarks.map(|b| b.name()).join(" ")' 2>/dev/null)
+printf '%s' "$id${bm:+ on $bm}"
+'''
+symbol = "󱗆 "
+style = "bold purple"
+format = "[$symbol$output]($style) "
+
+# Noise in jj repos: git's detached commit hash repeats what the jj module shows.
+[git_commit]
+disabled = true
+
+# The project version from pyproject.toml/package.json isn't useful in the prompt.
+[package]
+disabled = true
