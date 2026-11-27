@@ -50,3 +50,31 @@ There are no separate install/update modes. Each run updates managed packages, i
 Every run replaces `${XDG_CONFIG_HOME:-$HOME/.config}/nvim` without backups. Local-only edits and extra files in the Neovim config directory are removed. GitHub preserves committed repo versions, **not changes made only to the installed copies**; save anything you want to keep before running the installer. Keep shared customizations in the repo.
 
 Existing config symlinks are replaced, not followed; their external targets and any old backup directories are left untouched. Run one installer at a time. Configs are staged before replacement, but replacement is not an atomic transaction: if it fails after removal, correct the reported error and rerun. No rollback copy is retained.
+
+## Keyboard layer
+
+Hold the left half of the spacebar for numbers, brackets and arrows without leaving the home row; tap it for Space. Caps Lock opens the same layer (tap it for Esc), so a laptop or any other keyboard works too. Every other key is unchanged. [Kanata](https://github.com/jtroo/kanata) runs one config, [config/kanata/kanata.kbd](config/kanata/kanata.kbd), on the Mac and on Windows; the Ubuntu machines you SSH into need nothing.
+
+```
+q w e r t   y u i o p   ->   1 2 3 4 5   6 7 8 9 0
+a s d f g   h j k l ;   ->   { ( [ < =   Left Down Up Right :
+z x c v b   n m , . /   ->   } ) ] > +   _ - & | \
+```
+
+Shift passes through: Shift + layer + `q` gives `!`, and Shift + arrows selects. A Space typed right after a letter is always a plain Space, so fast typing doesn't open the layer by accident; the reasoning and timings are at the top of the config.
+
+The left half of the split spacebar must send Scroll Lock: set that in Armoury Crate and save it to the keyboard's onboard profile, so the Mac sees it too. To use another key, change `slck` on the first line of `defsrc` in the config.
+
+**Mac:** `bash install.sh` sets Kanata up the way [its macOS guide](https://github.com/jtroo/kanata/blob/v1.12.0/docs/setup-macos.md) does, asking for sudo only when something is missing: the Karabiner VirtualHIDDevice driver 6.2.0 from its signed package, `kanata` 1.12.0 in `/usr/local/bin`, and LaunchDaemons that start the driver's daemon and Kanata at boot, reading `~/.config/kanata/kanata.kbd`. The two versions are pinned together because Kanata 1.12 only speaks to that driver. After the first run, approve once in System Settings: turn on the driver under General > Login Items & Extensions > Driver Extensions, and add `/usr/local/bin/kanata` under Privacy & Security > Input Monitoring and > Accessibility; then run `sudo launchctl kickstart -k system/dev.kanata.kanata`. Kanata can't run beside Karabiner-Elements, so the installer skips it if that app is installed. Its log is `/var/log/kanata.log`, and holding Left Ctrl + Space + Esc quits Kanata.
+
+**Windows:** the dotfiles live in WSL, so `bash install.sh` there copies the config to `%APPDATA%\kanata\kanata.kbd` on Windows (a copy, so Kanata doesn't need WSL running). Then, once, in PowerShell:
+
+```powershell
+winget install jtroo.kanata_gui
+$kanata = "$env:LOCALAPPDATA\Microsoft\WinGet\Links\kanata_windows_gui_winIOv2_x64.exe"
+$link = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\Kanata.lnk")
+$link.TargetPath = $kanata; $link.Arguments = "--cfg `"$env:APPDATA\kanata\kanata.kbd`""; $link.Save()
+Start-Process $kanata -ArgumentList "--cfg", "`"$env:APPDATA\kanata\kanata.kbd`""
+```
+
+That starts Kanata now and at every login, as a tray icon. After `install.sh` changes the config, pick Reload in the tray icon's menu. Apps running as administrator don't see the layer unless Kanata also runs as administrator.

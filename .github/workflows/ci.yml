@@ -24,6 +24,14 @@ jobs:
         run: |
           shellcheck --version
           git ls-files -z '*.sh' | xargs -0 shellcheck -x
+      - name: Kanata config parses
+        # The same Kanata release install.sh pins on the Mac (and winget ships on Windows).
+        run: |
+          curl -fsSL https://github.com/jtroo/kanata/releases/download/v1.12.0/linux-binaries-x64.zip -o "$RUNNER_TEMP/kanata.zip"
+          echo "0bedd91567c5d7c54679061baadc37e4f83fb71750003999bc1d11f2c9754f36  $RUNNER_TEMP/kanata.zip" | sha256sum -c -
+          unzip -p "$RUNNER_TEMP/kanata.zip" kanata_linux_x64 > "$RUNNER_TEMP/kanata"
+          chmod +x "$RUNNER_TEMP/kanata"
+          "$RUNNER_TEMP/kanata" --check -c config/kanata/kanata.kbd
 
   install:
     name: install (${{ matrix.os }}, ${{ matrix.shell }})

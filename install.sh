@@ -32,6 +32,7 @@ source "$DOTFILES_ROOT/scripts/install/rust.sh"
 source "$DOTFILES_ROOT/scripts/install/scout.sh"
 source "$DOTFILES_ROOT/scripts/install/formatters.sh"
 source "$DOTFILES_ROOT/scripts/install/shell.sh"
+source "$DOTFILES_ROOT/scripts/install/keyboard.sh"
 echo 'Applying repo configs without backups; local-only edits will be overwritten.'
 source "$DOTFILES_ROOT/scripts/install/lazyvim.sh"
 printf '\nRepo Neovim, Atuin, and shell configs applied.\n'
