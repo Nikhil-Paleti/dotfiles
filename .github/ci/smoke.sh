@@ -29,13 +29,19 @@ grep -Eq '^auto_sync[[:space:]]*=[[:space:]]*false' "$atuin_config"
 echo 'Neovim, Atuin and Starship configs match the repo; Atuin sync is off.'
 
 echo '--- scout'
-# A throwaway repo and index cache: scout indexes it and finds a definition and a call.
+# Throwaway repos and index cache. The cache path stays short: the indexer's socket lives in
+# it, and socket paths are capped near 104 characters (macOS's mktemp folders are long).
 scout_tmp=$(mktemp -d)
-export SCOUT_CACHE_DIR="$scout_tmp/cache"
-mkdir -p "$scout_tmp/repo/src"
-printf '%s\n' 'int hello_world(void) { return 1; }' 'int main() { return hello_world(); }' \
-  > "$scout_tmp/repo/src/a.c"
-git init -q "$scout_tmp/repo"
+export SCOUT_CACHE_DIR
+SCOUT_CACHE_DIR=$(mktemp -d /tmp/scout.XXXXXX)
+new_repo() {
+  mkdir -p "$1/src"
+  printf '%s\n' 'int hello_world(void) { return 1; }' 'int main() { return hello_world(); }' \
+    > "$1/src/a.c"
+  git init -q "$1"
+}
+# The CLI indexes a repo and finds both hits and the definition.
+new_repo "$scout_tmp/repo"
 scout build --quiet --root "$scout_tmp/repo"
 hits=$(scout search --root "$scout_tmp/repo" -F hello_world)
 printf '%s\n' "$hits"
@@ -48,26 +54,40 @@ scout_dir="$repo/modules/scout"
 grep -Fq "$repo" "$config_home/nvim/lua/dotfiles_root.lua" ||
   { echo 'The installed Neovim config does not point at this repo.' >&2; exit 1; }
 git -C "$scout_dir" log -1 --format='scout checkout: %h %s'
+# Opening Neovim in a repo with no index indexes it, with the same opts as the plugin spec. The
+# check runs on VimEnter, as lazy.nvim's VeryLazy does: setup comes after startup.
+new_repo "$scout_tmp/fresh"
 cat > "$scout_tmp/check.lua" <<'LUA'
 local plugin, repo = vim.env.SCOUT_PLUGIN, vim.env.SCOUT_REPO
 vim.opt.rtp:prepend(plugin)
 vim.cmd("runtime plugin/scout.lua")
+vim.cmd("cd " .. vim.fn.fnameescape(repo))
 require("scout").setup({ route_lazyvim_keys = false })
-local bin = require("scout.util").bin()
+local util = require("scout.util")
+local bin = util.bin()
 if bin ~= plugin .. "/target/release/scout" then
   io.stderr:write("scout plugin: expected the checkout's build, got " .. tostring(bin) .. "\n")
   vim.cmd("cq!")
 end
-vim.cmd("cd " .. vim.fn.fnameescape(repo))
-vim.cmd("Scout hello_world")
-local ok = vim.wait(10000, function() return #vim.fn.getqflist() == 2 end, 50)
-io.stdout:write(("scout plugin: binary %s, %d quickfix hits\n"):format(bin, #vim.fn.getqflist()))
-vim.cmd(ok and "qa!" or "cq!")
+local root = util.git_root()
+local function indexed()
+  local ok, st = pcall(vim.json.decode, vim.fn.system({ bin, "status", "--json", "--root", root }))
+  return ok and type(st) == "table" and st.indexed == true
+end
+local done = vim.wait(30000, indexed, 200)
+io.stdout:write(("scout plugin: binary %s, indexed on open: %s\n"):format(bin, tostring(done)))
+if done then
+  vim.cmd("Scout hello_world")
+  done = vim.wait(10000, function() return #vim.fn.getqflist() == 2 end, 50)
+  io.stdout:write(("scout plugin: %d quickfix hits\n"):format(#vim.fn.getqflist()))
+end
+vim.fn.system({ bin, "stop", "--root", root })
+vim.cmd(done and "qa!" or "cq!")
 LUA
-SCOUT_PLUGIN="$scout_dir" SCOUT_REPO="$scout_tmp/repo" \
-  nvim --headless -u NONE -i NONE -c "luafile $scout_tmp/check.lua" </dev/null ||
-  { echo 'The scout Neovim plugin could not search with the installed binary.' >&2; exit 1; }
-rm -rf "$scout_tmp"
+SCOUT_PLUGIN="$scout_dir" SCOUT_REPO="$scout_tmp/fresh" \
+  nvim --headless -u NONE -i NONE -c "au VimEnter * ++once ++nested luafile $scout_tmp/check.lua" </dev/null ||
+  { echo 'The scout Neovim plugin did not index on open or could not search.' >&2; exit 1; }
+rm -rf "$scout_tmp" "$SCOUT_CACHE_DIR"
 unset SCOUT_CACHE_DIR
 
 echo "--- New ${SHELL##*/} shell"

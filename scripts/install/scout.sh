@@ -1,4 +1,4 @@
-# Install scout, the indexed code search that Neovim's grep keys use in indexed repos
+# Install scout, the indexed code search that Neovim's grep and file keys use in indexed repos
 # (config/nvim/lua/plugins/scout.lua). One checkout of scout's main branch, in this repo's
 # modules/scout (git-ignored, so deleting the dotfiles folder deletes it too), serves both
 # halves: each run fast-forwards it,
