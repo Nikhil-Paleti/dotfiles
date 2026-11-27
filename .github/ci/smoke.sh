@@ -207,10 +207,10 @@ echo "--- New ${SHELL##*/} shell"
 # stdin is not a terminal here, so line editors such as ble.sh may print warnings;
 # only the PATH lookups below decide the result.
 # shellcheck disable=SC2016 # $tool expands in the new shell
-found=$("$SHELL" -ic 'for tool in nvim atuin starship zoxide scout; do command -v "$tool"; done
+found=$("$SHELL" -ic 'for tool in nvim atuin starship zoxide scout dot; do command -v "$tool"; done
   type z zi >/dev/null 2>&1 && echo zoxide-commands' </dev/null 2>/dev/null || true)
 printf '%s\n' "$found"
-for tool in nvim atuin starship zoxide scout; do
+for tool in nvim atuin starship zoxide scout dot; do
   grep -q "/$tool\$" <<<"$found" || { echo "$tool is not on PATH in a new ${SHELL##*/} shell." >&2; exit 1; }
 done
 # zoxide's init line ran: z and zi exist. Plain cd is left as the builtin.
@@ -223,5 +223,18 @@ version_out=$(bash "$repo/install.sh" --version)
 printf '%s\n' "$version_out"
 { grep -q '^dotfiles ' <<<"$version_out" && grep -q 'Last installs on this machine' <<<"$version_out"; } ||
   { echo 'install.sh --version did not show the version and history.' >&2; exit 1; }
+
+echo '--- dot'
+# The dot command from a new shell, in a folder outside the repo: version, then doctor, which
+# fails if any check does. CI has no keyboard, so doctor skips that check.
+dot_out=$(cd / && "$SHELL" -ic 'dot version && dot doctor' </dev/null 2>&1) ||
+  { printf '%s\n' "$dot_out"; echo 'dot version or dot doctor failed in a new shell.' >&2; exit 1; }
+printf '%s\n' "$dot_out"
+grep -q '^dotfiles ' <<<"$dot_out" || { echo 'dot version printed no version.' >&2; exit 1; }
+grep -qx 'All good.' <<<"$dot_out" || { echo 'dot doctor did not say All good.' >&2; exit 1; }
+if [[ "$(uname -s)" == Linux ]]; then
+  kb_out=$(bash "$repo/bin/dot" kb status)
+  [[ "$kb_out" == 'Kanata runs on'* ]] || { echo "dot kb status on Linux said: $kb_out" >&2; exit 1; }
+fi
 
 echo 'Smoke checks passed.'

@@ -65,6 +65,8 @@ After `install.sh` changes the config, pick Reload in the tray menu.
 
 ## When it misbehaves
 
+- **Check, stop or start it:** `dot kb status`, `dot kb stop`, `dot kb start`
+  (Mac, or WSL for Windows).
 - **Quit Kanata:** hold Left Ctrl + Space + Esc.
 - **Mac log:** `/var/log/kanata.log`.
 - **Stopped on Windows:** double-click Kanata in the Startup folder (Win+R,

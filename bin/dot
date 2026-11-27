@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# dot: this dotfiles repo from any folder. install.sh links it to ~/.local/bin/dot.
+#   dot update [--verbose]     pull this repo and rerun install.sh
+#   dot kb start|stop|status   the Kanata keyboard layer (dot kb alone is status)
+#   dot doctor                 check each installed piece and say what's broken
+#   dot version                this checkout's version and the last installs here
+set -euo pipefail
+# Follow the ~/.local/bin link back to the repo.
+self=${BASH_SOURCE[0]}
+while [[ -L "$self" ]]; do
+  link=$(readlink "$self")
+  case "$link" in /*) self=$link ;; *) self="$(dirname "$self")/$link" ;; esac
+done
+DOTFILES_ROOT="$(CDPATH='' cd -- "$(dirname -- "$self")/.." && pwd)"
+readonly DOTFILES_ROOT
+
+usage() { sed -n '3,6p' "$DOTFILES_ROOT/bin/dot" | sed 's/^# */  /'; }
+cmd=${1:-help}
+[[ $# -eq 0 ]] || shift
+case "$cmd" in
+  update) exec bash "$DOTFILES_ROOT/install.sh" "$@" ;;
+  version|--version|-V) exec bash "$DOTFILES_ROOT/install.sh" --version ;;
+  kb|keyboard) source "$DOTFILES_ROOT/scripts/dot/kb.sh"; dot_kb "$@" ;;
+  doctor) source "$DOTFILES_ROOT/scripts/dot/doctor.sh"; dot_doctor "$@" ;;
+  help|-h|--help) echo 'Usage:'; usage ;;
+  *) printf 'dot: unknown command %s\nUsage:\n' "$cmd" >&2; usage >&2; exit 2 ;;
+esac
