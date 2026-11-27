@@ -8,14 +8,20 @@ install_tool "Atuin" atuin
 # Record the shell commands AI coding agents run, tagged with the agent's name and hidden from
 # your own Ctrl+R/Up/suggestions (see them with: atuin search --author '$all-agent'). Atuin adds
 # a hook to each installed agent's own config and keeps its other settings; reruns change nothing.
+# Needs Atuin 18.25 or newer. The Homebrew atuin is upgraded above; an older atuin installed
+# another way (Atuin's own installer, cargo, apt) is left alone and this step is skipped.
 block_start "Atuin agent history"
-for agent in claude:claude-code codex:codex; do
-  if have "${agent%%:*}"; then
-    atuin setup --only --agent-history --agents "${agent#*:}" </dev/null
-  else
-    echo "${agent#*:} is not installed; skipped."
-  fi
-done
+if [[ "$(atuin setup --help 2>/dev/null)" != *--agent-history* ]]; then
+  echo "$(atuin --version) at $(command -v atuin) is older than 18.25, which agent history needs; skipped. Upgrade that atuin (or remove it so Homebrew's is used) and rerun."
+else
+  for agent in claude:claude-code codex:codex; do
+    if have "${agent%%:*}"; then
+      atuin setup --only --agent-history --agents "${agent#*:}" </dev/null
+    else
+      echo "${agent#*:} is not installed; skipped."
+    fi
+  done
+fi
 block_end "Atuin agent history"
 ##### end Atuin agent history #####
 install_tool "Starship" starship
