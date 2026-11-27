@@ -1,7 +1,8 @@
 ;; Coding layer for Kanata, one file for macOS and Windows.
 ;; Hold left space (or Caps Lock) for numbers, brackets and arrows; tap left space for Space
-;; and Caps Lock for Esc. Everything else on the keyboard is unchanged. The key map and setup
-;; steps are in the README ("Keyboard layer"). install.sh copies this file into place.
+;; and Caps Lock for Esc. On macOS, Alt and Command are also swapped (see the end of the
+;; file). Everything else on the keyboard is unchanged. The key map and setup steps are in
+;; the README ("Keyboard layer"). install.sh copies this file into place.
 
 ;; ---- Settings you might change ----------------------------------------------------------
 ;; Trigger keys: Kanata allows no variables in defsrc, so the two triggers are the first line
@@ -21,6 +22,13 @@
   ;; Keys not listed in defsrc still pass through Kanata, so Shift and the rest reach the
   ;; layer and count when Kanata decides between tap and hold.
   process-unmapped-keys yes
+  ;; macOS only: on the Mac, install.sh replaces the next line with
+  ;;   macos-dev-names-include ("<your keyboard>") and macos-continue-if-no-devs-found yes
+  ;; using the names in ~/.config/kanata/macos-keyboards.txt (it finds ROG/ASUS keyboards
+  ;; with `kanata --list`). Kanata then grabs only those keyboards, waits for one that isn't
+  ;; plugged in yet, and grabs it again after a replug. Kanata 1.12 never picks up a keyboard
+  ;; it wasn't told about once it has started. With no names, it grabs every keyboard.
+  ;; @macos-keyboards@
 )
 
 ;; Why two different tap-holds:
@@ -38,6 +46,7 @@
 
 (defsrc
   slck caps
+  lalt lmet ralt rmet
   q    w    e    r    t    y    u    i    o    p
   a    s    d    f    g    h    j    k    l    ;
   z    x    c    v    b    n    m    ,    .    /
@@ -45,6 +54,7 @@
 
 (deflayer base
   @spc @caps
+  @lalt @lmet @ralt @rmet
   _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _
@@ -56,7 +66,20 @@
 ;;   z x c v b n m , . /   ->  } ) ] > + _ - & | \
 (deflayer code
   _    _
+  _    _    _    _
   1    2    3    4    5    6    7    8    9    0
   S-[  S-9  [    S-,  =    left down up   rght S-;
   S-]  S-0  ]    S-.  S-=  S-min min  S-7  S-bksl bksl
+)
+
+;; Alt and Command. macOS's own Option/Command swap (System Settings > Keyboard > Modifier
+;; Keys) no longer reaches a keyboard Kanata grabs: Kanata reads the keys before macOS does
+;; and types through its own virtual keyboard. So on macOS the swap is done here, and the key
+;; next to the spacebar (Alt on this keyboard) is Command. Keep the macOS swap too: it still
+;; applies whenever Kanata isn't running. Windows keeps Alt and Win as they are.
+(platform (macos)
+  (defalias lalt lmet  lmet lalt  ralt rmet  rmet ralt)
+)
+(platform (win winiov2 wintercept linux)
+  (defalias lalt lalt  lmet lmet  ralt ralt  rmet rmet)
 )
