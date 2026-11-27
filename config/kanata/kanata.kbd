@@ -2,7 +2,7 @@
 ;; Hold left space (or Caps Lock) for numbers, brackets and arrows; tap left space for Space
 ;; and Caps Lock for Esc. On macOS, Alt and Command are also swapped (see the end of the
 ;; file). Everything else on the keyboard is unchanged. The key map and setup steps are in
-;; the README ("Keyboard layer"). install.sh copies this file into place.
+;; config/kanata/README.md. install.sh copies this file into place.
 
 ;; ---- Settings you might change ----------------------------------------------------------
 ;; Trigger keys: Kanata allows no variables in defsrc, so the two triggers are the first line
