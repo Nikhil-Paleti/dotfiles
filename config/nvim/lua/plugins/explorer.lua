@@ -4,6 +4,7 @@
 --   j/k move, l or Enter opens a file or folder, h closes a folder, Backspace goes up a folder
 --   a add a file (end the name with / for a folder), r rename, m move, c copy, d delete,
 --   y yank and p paste, / or i type to filter the tree by name, Esc closes
+--   Folder names stay pinned at the top while you scroll inside them (explorer_context.lua).
 --   Space / searches the highlighted folder's contents (or the file's folder). scout takes this
 --   key over in indexed repos (see plugins/scout.lua); elsewhere it is Snacks grep in that folder.
 return {
@@ -23,6 +24,11 @@ return {
             },
             auto_close = true,
             jump = { close = true },
+            on_show = function(picker)
+              pcall(function()
+                require("explorer_context").attach(picker)
+              end)
+            end,
           },
         },
       },
