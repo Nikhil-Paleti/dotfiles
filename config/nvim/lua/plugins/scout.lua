@@ -1,0 +1,31 @@
+-- scout: indexed code search (github.com/Nikhil-Paleti/scout). Run :ScoutIndex once in a
+-- repo; from then on LazyVim's grep keys (Space /, Space s g, Space s w) search scout's index
+-- there. Repos without an index keep the Snacks picker's ripgrep, and file search
+-- (Space Space, Space f f) stays on Snacks everywhere. Indexes live in ~/.cache/scout on this
+-- machine only; nothing is uploaded. :checkhealth scout shows the binary and index state.
+--
+-- install.sh keeps a checkout of scout's main branch in the dotfiles folder's modules/scout
+-- (git-ignored), pulls it on every run, and builds the binary there. The plugin loads from that
+-- same folder, so its Lua and the binary always come from one commit. lazy.nvim doesn't clone,
+-- update or build it (and lazy-lock.json has no entry for it): rerun bash install.sh to update
+-- scout. install.sh writes lua/dotfiles_root.lua with the dotfiles path into the installed
+-- config; without it, or before the folder exists, the plugin is skipped.
+local ok, dotfiles_root = pcall(require, "dotfiles_root")
+local scout_dir = (ok and type(dotfiles_root) == "string" and dotfiles_root or "") .. "/modules/scout"
+
+return {
+  {
+    dir = scout_dir,
+    name = "scout",
+    cond = (vim.uv or vim.loop).fs_stat(scout_dir .. "/lua/scout/init.lua") ~= nil,
+    -- After the start screen draws: setup only starts one background `scout status`.
+    event = "VeryLazy",
+    -- Space s y and Space s x are free in LazyVim's search group. Both use the word under
+    -- the cursor; callers are matched by name, so same-named functions mix.
+    keys = {
+      { "<leader>sy", "<cmd>ScoutSym<cr>", desc = "Definitions (scout)" },
+      { "<leader>sx", "<cmd>ScoutCallers<cr>", desc = "Callers (scout)" },
+    },
+    opts = {},
+  },
+}
