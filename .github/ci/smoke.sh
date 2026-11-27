@@ -204,4 +204,14 @@ for tool in nvim atuin starship zoxide scout; do
 done
 # zoxide's init line ran: z and zi exist. Plain cd is left as the builtin.
 grep -qx zoxide-commands <<<"$found" || { echo "z and zi are not defined in a new ${SHELL##*/} shell." >&2; exit 1; }
+echo '--- Versions'
+# Both install.sh runs left a line in the install history, and --version shows it.
+installs="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/installs.log"
+[[ $(wc -l <"$installs") -ge 2 ]] || { echo "Expected two installs in $installs." >&2; exit 1; }
+version_out=$(bash "$repo/install.sh" --version)
+printf '%s\n' "$version_out"
+{ grep -q '^dotfiles ' <<<"$version_out" && grep -q 'Last installs on this machine' <<<"$version_out"; } ||
+  { echo 'install.sh --version did not show the version and history.' >&2; exit 1; }
+bash "$repo/install.sh" --to no-such-version >/dev/null 2>&1 && { echo '--to accepted a missing version.' >&2; exit 1; }
+
 echo 'Smoke checks passed.'
