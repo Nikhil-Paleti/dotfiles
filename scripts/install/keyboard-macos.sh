@@ -51,6 +51,9 @@ kb_sudo() {
   fi
   sudo "$@"
 }
+# Whether launchd has the system service $1 loaded: a matching plist on disk doesn't mean it
+# is (a manual `launchctl bootout` leaves the file behind).
+kb_loaded() { launchctl print "system/$1" >/dev/null 2>&1; }
 # The repo config with the names from $kanata_names in place of its marker line.
 kanata_render() {
   local names='' line
@@ -111,10 +114,18 @@ kanata_wait_outcome() {
     sleep 1
   done
 }
+# Whether Kanata is running right now (launchd's view, not the log).
+kanata_running() { launchctl print system/dev.kanata.kanata 2>/dev/null | grep -qE '^[[:space:]]*state = running'; }
+# Restart Kanata, loading its service first if launchd doesn't have it, and judge only the
+# log lines this start writes.
 kanata_restart() {
   local before
   before=$(kanata_log_lines)
-  kb_sudo launchctl kickstart -k system/dev.kanata.kanata
+  if kb_loaded dev.kanata.kanata; then
+    kb_sudo launchctl kickstart -k system/dev.kanata.kanata
+  else
+    kb_sudo launchctl bootstrap system "$kanata_plist"
+  fi
   kanata_wait_outcome "$before"
 }
 # Caps Lock is Esc on the built-in keyboard too, which Kanata leaves alone: macOS's hidutil
@@ -159,7 +170,7 @@ else
   fi
   # 2. The driver's daemon, which Karabiner-Elements would otherwise run.
   kb_render org.pqrs.Karabiner-VirtualHIDDevice-Daemon.plist VHID_ROOT="$vhid_root" >"$kb_tmp/vhid.plist"
-  if ! cmp -s "$kb_tmp/vhid.plist" "$vhid_plist"; then
+  if ! cmp -s "$kb_tmp/vhid.plist" "$vhid_plist" || ! kb_loaded org.pqrs.Karabiner-VirtualHIDDevice-Daemon; then
     kb_sudo install -m 644 -o root -g wheel "$kb_tmp/vhid.plist" "$vhid_plist"
     kb_sudo launchctl bootout system "$vhid_plist" 2>/dev/null || true
     kb_sudo launchctl bootstrap system "$vhid_plist"
@@ -190,7 +201,7 @@ else
   # 5. kanata itself, as root at boot (it must be root to reach the driver).
   kb_render dev.kanata.kanata.plist KANATA_BIN="$kanata_bin" KANATA_CFG="$kanata_cfg" KANATA_LOG="$kanata_log" >"$kb_tmp/kanata.plist"
   kanata_before=$(kanata_log_lines)
-  if ! cmp -s "$kb_tmp/kanata.plist" "$kanata_plist"; then
+  if ! cmp -s "$kb_tmp/kanata.plist" "$kanata_plist" || ! kb_loaded dev.kanata.kanata; then
     kb_sudo install -m 644 -o root -g wheel "$kb_tmp/kanata.plist" "$kanata_plist"
     kb_sudo launchctl bootout system "$kanata_plist" 2>/dev/null || true
     kb_sudo launchctl bootstrap system "$kanata_plist"
@@ -201,8 +212,11 @@ else
     detail 'Restarting Kanata with the new config.'
     kanata_restart
   else
-    kanata_state=$(kanata_outcome 0)
-    if [[ ( "$kanata_state" == none || "$kanata_state" == pending ) && -t 0 ]]; then kanata_restart; fi
+    # Nothing changed. The log's newest start describes Kanata only while it is running; an
+    # old success in the log says nothing about a Kanata that has since stopped.
+    kanata_state=none
+    if kanata_running; then kanata_state=$(kanata_outcome 0); fi
+    if [[ "$kanata_state" != ok && "$kanata_state" != waiting && -t 0 ]]; then kanata_restart; fi
   fi
   # 6. The one-time macOS approvals, one System Settings window at a time.
   if [[ "$kanata_state" != ok && "$kanata_state" != waiting ]]; then
@@ -249,11 +263,13 @@ else
     accessibility) fail 'Kanata lacks Accessibility' ;;
     driver) fail 'the Karabiner driver is not switched on (Driver Extensions)' ;;
     grab-failed) fail 'Kanata could not grab the keyboard' ;;
+    none) fail 'Kanata is not running' ;;
     *) fail "Kanata has not reported in; check $kanata_log" ;;
   esac
   case "$kanata_state" in
     ok|waiting) ;;
     grab-failed) warn 'Remove kanata (-) from Input Monitoring and Accessibility, then rerun bash install.sh in a terminal to add it back.' ;;
+    none) warn 'Rerun bash install.sh in a terminal to start it.' ;;
     *) warn 'Rerun bash install.sh in a terminal; it walks you through each System Settings window.' ;;
   esac
   if [[ "$kb_fresh" == true ]]; then
