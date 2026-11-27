@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Install missing tools, update managed tools, and apply the repo Neovim, Atuin, and shell configs.
+# Update this repo, install missing tools, update managed tools, and apply the repo Neovim, Atuin,
+# and shell configs. Rerun it to update everything.
 # Usage: bash install.sh [--verbose]   (or DOTFILES_VERBOSE=1) to show every command's output.
 # Run as a normal user; system setup may request sudo. Your default shell is unchanged.
 set -euo pipefail
@@ -9,12 +10,13 @@ readonly DOTFILES_ROOT
 case "${1:-}" in
   '') ;;
   -v|--verbose) DOTFILES_VERBOSE=1 ;;
-  -h|--help) sed -n '2,4p' "$DOTFILES_ROOT/install.sh"; exit 0 ;;
+  -h|--help) sed -n '2,5p' "$DOTFILES_ROOT/install.sh"; exit 0 ;;
   *) echo 'Usage: bash install.sh [--verbose|--help]' >&2; exit 2 ;;
 esac
 # Modules share this process (PATH changes, temp cleanup); run this file, not them.
 source "$DOTFILES_ROOT/scripts/lib/common.sh"
 source "$DOTFILES_ROOT/scripts/platform.sh"
+source "$DOTFILES_ROOT/scripts/pull.sh"
 source "$DOTFILES_ROOT/scripts/discover.sh"
 source "$DOTFILES_ROOT/scripts/components.sh"
 source "$DOTFILES_ROOT/scripts/lib/temp.sh"

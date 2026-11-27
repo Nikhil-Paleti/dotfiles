@@ -1,22 +1,25 @@
-# Upgrade the Homebrew formulas in this project's tool list (nothing else); later steps install
-# what is missing.
+# Upgrade the Homebrew formulas in this project's tool list (nothing else), in one brew call;
+# later steps install what is missing.
 # shellcheck disable=SC2154 # globals come from files install.sh sources earlier
 step 'Homebrew update'
 run brew update
 # A broken package database is an error, not a list of missing tools.
-run brew list --formula
-updated_formulae=':' upgraded=()
+brew_installed=$(brew list --formula -1) || die 'brew list failed; run brew doctor, then rerun.'
+managed=()
 for item in "${requirements[@]}"; do
   formula=${item#*:}
-  # node and npm share a formula.
-  case "$updated_formulae" in *":$formula:"*) continue ;; esac
-  updated_formulae="$updated_formulae$formula:"
-  if ! brew list --formula --versions "$formula" >/dev/null 2>&1; then
-    detail "$formula: not installed with Homebrew; skipped."
-    continue
-  fi
-  run brew upgrade --formula "$formula"
-  # brew says "already installed" when there was nothing to upgrade.
-  verbose || grep -q 'already installed' "$_dotfiles_log" || upgraded+=("$formula")
+  # Only formulas installed with Homebrew (a tool installed another way is left alone), once
+  # each (node and npm share a formula).
+  grep -qxF -- "$formula" <<<"$brew_installed" || continue
+  case " ${managed[*]-} " in *" $formula "*) continue ;; esac
+  managed+=("$formula")
 done
-ok "${upgraded[*]:+upgraded ${upgraded[*]}}"
+outdated=()
+if [[ ${#managed[@]} -gt 0 ]]; then
+  # brew outdated exits 1 when a named formula is outdated; only its list matters here.
+  while IFS= read -r formula; do
+    [[ -z "$formula" ]] || outdated+=("$formula")
+  done < <(brew outdated --formula --quiet "${managed[@]}")
+fi
+[[ ${#outdated[@]} -eq 0 ]] || run brew upgrade --formula "${outdated[@]}"
+ok "${outdated[*]:+upgraded ${outdated[*]}}"
