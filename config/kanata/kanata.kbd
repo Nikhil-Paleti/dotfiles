@@ -85,7 +85,9 @@
 ;; names only the keyboards present when it starts, which the built-in one always is, so the
 ;; ROG keyboard plugged in later still gets the swap.
 ;; Device 1 is the built-in keyboard. One item per platform block, as Kanata requires.
-(platform (macos) (definputdevices 1 ((name "Apple Internal Keyboard"))))
+;; The name is one bare word, not quoted: Kanata 1.12 keeps the quotes as part of a quoted
+;; name, so (name "Apple Internal Keyboard") never matches any keyboard.
+(platform (macos) (definputdevices 1 ((name Internal))))
 (platform (macos)
   (defalias
     lalt (switch ((device-history 1 1)) lalt break () lmet break)
