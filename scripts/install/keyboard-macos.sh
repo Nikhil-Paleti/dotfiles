@@ -117,28 +117,22 @@ kanata_restart() {
   fi
   kanata_wait_outcome "$before"
 }
-# Caps Lock is Esc on the built-in keyboard too, which Kanata leaves alone: macOS's hidutil
-# remapping (Apple TN2450) from a login item, as it lasts only until restart. No sudo. It
-# replaces other mappings on that keyboard (System Settings > Keyboard > Modifier Keys).
+# Caps Lock on the built-in keyboard used to be Esc through a hidutil login item. Kanata grabs
+# that keyboard now, so the login item and its remap go: a remap left in place would turn Caps
+# Lock into Esc before Kanata sees it, and the layer would never open there. No sudo.
 capsesc_plist="$HOME/Library/LaunchAgents/dev.dotfiles.capslock-esc.plist"
-capsesc_map='{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":30064771129,"HIDKeyboardModifierMappingDst":30064771113}]}'
-kb_render dev.dotfiles.capslock-esc.plist CAPSESC_MAP="$capsesc_map" >"$kb_tmp/capsesc.plist"
-if [[ -n "${CI:-}" ]]; then
-  detail 'CI: Caps Lock to Esc login item skipped (needs a login session).'
-elif ! cmp -s "$kb_tmp/capsesc.plist" "$capsesc_plist"; then
-  mkdir -p "$(dirname "$capsesc_plist")"
-  cp "$kb_tmp/capsesc.plist" "$capsesc_plist"
+if [[ -f "$capsesc_plist" ]]; then
   launchctl bootout "gui/$(id -u)" "$capsesc_plist" 2>/dev/null || true
-  launchctl bootstrap "gui/$(id -u)" "$capsesc_plist" ||
-    hidutil property --matching '{"Built-In":true}' --set "$capsesc_map" >/dev/null
-  note "Caps Lock is now Esc on the built-in keyboard (login item: $(short_path "$capsesc_plist"))."
+  rm -f "$capsesc_plist"
+  hidutil property --matching '{"Built-In":true}' --set '{"UserKeyMapping":[]}' >/dev/null 2>&1 || true
+  note 'Removed the old Caps Lock to Esc login item; Kanata handles the built-in keyboard now.'
 fi
 if [[ -n "${CI:-}" ]]; then
   kanata_apply_config
   # The LaunchDaemons need sudo and a real keyboard, so CI only checks that they render.
   kb_render org.pqrs.Karabiner-VirtualHIDDevice-Daemon.plist VHID_ROOT="$vhid_root" >"$kb_tmp/vhid.plist"
   kb_render dev.kanata.kanata.plist KANATA_BIN="$kanata_bin" KANATA_CFG="$kanata_cfg" KANATA_LOG="$kanata_log" >"$kb_tmp/kanata.plist"
-  run plutil -lint "$kb_tmp/capsesc.plist" "$kb_tmp/vhid.plist" "$kb_tmp/kanata.plist"
+  run plutil -lint "$kb_tmp/vhid.plist" "$kb_tmp/kanata.plist"
   ok 'config and plists only in CI'
 elif [[ -d /Applications/Karabiner-Elements.app ]]; then
   kanata_apply_config
@@ -177,14 +171,15 @@ else
     kb_sudo install -m 755 -o root -g wheel "$kb_tmp/kanata" "$kanata_bin"
     kanata_bin_changed=true
   fi
-  # 4. ROG/ASUS keyboards plugged in now join the list. Only listed keyboards are picked up
-  # when plugged in after Kanata starts (see the config).
+  # 4. The built-in keyboard and any ROG/ASUS keyboard plugged in now join the list. Only
+  # listed keyboards are picked up when plugged in after Kanata starts (see the config).
   [[ -f "$kanata_names" ]] || echo '# Keyboards Kanata grabs, one name per line, as kanata --list prints them.' >"$kanata_names"
   while IFS= read -r kb_name; do
     [[ -n "$kb_name" ]] || continue
     grep -qxF -- "$kb_name" "$kanata_names" || { printf '%s\n' "$kb_name" >>"$kanata_names"; note "Kanata will grab this keyboard: $kb_name ($(short_path "$kanata_names"))"; }
-  done < <({ "$kanata_bin" --list 2>/dev/null || sudo -n "$kanata_bin" --list 2>/dev/null; } | sed -nE 's/^0x[0-9A-Fa-f]+ +[0-9]+ +[0-9]+ +//p' | sed -E 's/[[:space:]]+$//' | grep -iE 'rog|asus' | sort -u || true)
-  grep -qvE '^(#|$)' "$kanata_names" || detail 'No ROG/ASUS keyboard found, so Kanata grabs every keyboard. Plug it in and rerun to grab only it.'
+  done < <({ "$kanata_bin" --list 2>/dev/null || sudo -n "$kanata_bin" --list 2>/dev/null; } | sed -nE 's/^0x[0-9A-Fa-f]+ +[0-9]+ +[0-9]+ +//p' | sed -E 's/[[:space:]]+$//' | grep -iE 'rog|asus|apple internal keyboard' | sort -u || true)
+  grep -qvE '^(#|$)' "$kanata_names" || detail 'No keyboard found to list, so Kanata grabs every keyboard. Plug the ROG keyboard in and rerun to list it.'
+  grep -qiE 'rog|asus' "$kanata_names" || detail 'No ROG/ASUS keyboard listed yet. Plug it in and rerun so Kanata grabs it too.'
   kanata_apply_config
   "$kanata_bin" --check -c "$kanata_cfg" >/dev/null || die "Kanata rejected $kanata_cfg; fix it, then rerun."
   # 5. kanata itself, as root at boot (it must be root to reach the driver).
