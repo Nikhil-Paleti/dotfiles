@@ -37,14 +37,10 @@ Every commit on main that passes CI gets a dated version, like
 that lists what changed.
 
 ```sh
-bash ~/dotfiles/install.sh --version            # version here and the last installs
-bash ~/dotfiles/install.sh --to v2026.11.25.1   # go back to a version
-bash ~/dotfiles/install.sh --to latest          # follow main again
+bash ~/dotfiles/install.sh --version   # version here and the last installs
 ```
 
-Going back pins the repo, so later runs stay on that version until
-`--to latest`. It brings back that version's configs and Neovim plugin
-versions. Homebrew tools still upgrade.
+If a change breaks something, revert it on main and run `install.sh` again.
 
 ## What gets installed
 

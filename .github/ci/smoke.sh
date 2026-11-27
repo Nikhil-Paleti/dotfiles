@@ -223,6 +223,5 @@ version_out=$(bash "$repo/install.sh" --version)
 printf '%s\n' "$version_out"
 { grep -q '^dotfiles ' <<<"$version_out" && grep -q 'Last installs on this machine' <<<"$version_out"; } ||
   { echo 'install.sh --version did not show the version and history.' >&2; exit 1; }
-bash "$repo/install.sh" --to no-such-version >/dev/null 2>&1 && { echo '--to accepted a missing version.' >&2; exit 1; }
 
 echo 'Smoke checks passed.'
