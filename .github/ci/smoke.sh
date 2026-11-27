@@ -42,20 +42,18 @@ printf '%s\n' "$hits"
 [[ $(grep -c '^src/a.c:' <<<"$hits") -eq 2 ]] || { echo 'scout did not find both hits.' >&2; exit 1; }
 scout search --root "$scout_tmp/repo" 'sym:hello_world' | grep -q '^src/a.c:1:.*\[function\]' ||
   { echo 'scout did not find the definition.' >&2; exit 1; }
-# The Neovim plugin, at the commit lazy-lock.json pins, finds the installed binary and fills
-# the quickfix list. Plugins are not installed in CI, so it is fetched on its own here.
-scout_rev=$(sed -n 's/^ *"scout": {.*"commit": "\([0-9a-f]\{40\}\)".*/\1/p' "$repo/config/nvim/lazy-lock.json")
-git init -q "$scout_tmp/plugin"
-git -C "$scout_tmp/plugin" fetch -q --depth 1 https://github.com/Nikhil-Paleti/scout "$scout_rev"
-git -C "$scout_tmp/plugin" checkout -q FETCH_HEAD
+# The Neovim plugin loads from install.sh's scout checkout and uses the build in it.
+scout_data="${XDG_DATA_HOME:-}"
+scout_dir="${scout_data:-$HOME/.local/share}/scout"
+git -C "$scout_dir" log -1 --format='scout checkout: %h %s'
 cat > "$scout_tmp/check.lua" <<'LUA'
 local plugin, repo = vim.env.SCOUT_PLUGIN, vim.env.SCOUT_REPO
 vim.opt.rtp:prepend(plugin)
 vim.cmd("runtime plugin/scout.lua")
 require("scout").setup({ route_lazyvim_keys = false })
 local bin = require("scout.util").bin()
-if not bin then
-  io.stderr:write("scout plugin: binary not found\n")
+if bin ~= plugin .. "/target/release/scout" then
+  io.stderr:write("scout plugin: expected the checkout's build, got " .. tostring(bin) .. "\n")
   vim.cmd("cq!")
 end
 vim.cmd("cd " .. vim.fn.fnameescape(repo))
@@ -64,7 +62,7 @@ local ok = vim.wait(10000, function() return #vim.fn.getqflist() == 2 end, 50)
 io.stdout:write(("scout plugin: binary %s, %d quickfix hits\n"):format(bin, #vim.fn.getqflist()))
 vim.cmd(ok and "qa!" or "cq!")
 LUA
-SCOUT_PLUGIN="$scout_tmp/plugin" SCOUT_REPO="$scout_tmp/repo" \
+SCOUT_PLUGIN="$scout_dir" SCOUT_REPO="$scout_tmp/repo" \
   nvim --headless -u NONE -i NONE -c "luafile $scout_tmp/check.lua" </dev/null ||
   { echo 'The scout Neovim plugin could not search with the installed binary.' >&2; exit 1; }
 rm -rf "$scout_tmp"
