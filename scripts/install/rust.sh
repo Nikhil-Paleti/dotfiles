@@ -1,92 +1,70 @@
-# Install Rust and cargo with rustup, the official per-user installer (no sudo), or update
-# them when rustup already manages them. A Rust install that rustup does not manage (Homebrew's
-# rust formula, apt's cargo) is reused, not upgraded or replaced: rustup warns against
-# installing beside one. Then put cargo's bin directory on PATH for future bash and zsh sessions.
-##### Rust install #####
-block_start Rust
+# Rust via rustup, the official per-user installer, or updated when rustup manages it. A Rust
+# that rustup doesn't manage (Homebrew's rust, apt's cargo) is reused as is: rustup warns
+# against installing beside one. Then cargo's bin goes on PATH for future shells.
+# shellcheck disable=SC2154 # globals come from files install.sh sources earlier
+step Rust
 cargo_home="${CARGO_HOME:-$HOME/.cargo}"
-case "$cargo_home" in /*) ;; *) echo 'CARGO_HOME must be an absolute path.' >&2; exit 1 ;; esac
-# Find a rustup install from an earlier run even if this shell has not loaded it yet.
-if [[ -d "$cargo_home/bin" ]]; then
-  case ":$PATH:" in *":$cargo_home/bin:"*) ;; *) export PATH="$cargo_home/bin:$PATH" ;; esac
-fi
+case "$cargo_home" in /*) ;; *) die 'CARGO_HOME must be an absolute path.' ;; esac
+cargo_on_path() { case ":$PATH:" in *":$cargo_home/bin:"*) ;; *) export PATH="$cargo_home/bin:$PATH" ;; esac; }
+# A rustup from an earlier run that this shell hasn't loaded yet.
+[[ ! -d "$cargo_home/bin" ]] || cargo_on_path
+rust_note=''
 if have rustup; then
-  # Only a rustup that rustup-init installed can update itself; Homebrew's and apt's cannot.
-  if [[ "$(command -v rustup)" == "$cargo_home/bin/rustup" ]]; then rustup self update; fi
-  # A rustup with no toolchain (Homebrew's rustup formula starts that way) gets stable as default.
+  # Only rustup-init's rustup can update itself; Homebrew's and apt's cannot.
+  if [[ "$(command -v rustup)" == "$cargo_home/bin/rustup" ]]; then run rustup self update; fi
+  # A rustup with no toolchain (Homebrew's starts that way) gets stable as default.
   if [[ "$(rustup toolchain list)" == 'no installed toolchains' ]] || ! rustup default >/dev/null 2>&1; then
-    rustup default stable
+    run rustup default stable
   else
-    rustup update --no-self-update
+    run rustup update --no-self-update
   fi
 elif have cargo || have rustc; then
   rust_path=$(command -v cargo || command -v rustc)
-  if ! have cargo; then
-    echo "rustc is installed without cargo or rustup ($rust_path)." >&2
-    echo 'Install cargo with the same package manager, or remove that rustc so rustup can install both; then rerun.' >&2
-    exit 1
-  elif have brew && brew list --formula --versions rust >/dev/null 2>&1; then
-    echo "Rust from Homebrew's rust formula is installed ($rust_path); reused, not upgraded."
-    echo 'To switch to rustup: brew uninstall rust, then rerun bash install.sh.'
+  have cargo || die "rustc is installed without cargo or rustup ($rust_path)." \
+    'Install cargo with the same package manager, or remove that rustc so rustup can install both; then rerun.'
+  if have brew && brew list --formula --versions rust >/dev/null 2>&1; then
+    rust_note="Homebrew's rust, not upgraded"
+    detail 'To switch to rustup: brew uninstall rust, then rerun bash install.sh.'
   else
-    echo "Rust is installed without rustup ($rust_path); reused, not upgraded."
-    echo 'To switch to rustup, remove that install, then rerun bash install.sh.'
+    rust_note="not from rustup ($rust_path), not upgraded"
+    detail 'To switch to rustup, remove that install, then rerun bash install.sh.'
   fi
 else
-  # shellcheck disable=SC2154 # _dotfiles_download_dir is set by scripts/lib/temp.sh
   rustup_init="$_dotfiles_download_dir/rustup-init.sh"
-  # The script sh.rustup.rs serves, fetched from rustup's own release host.
+  # What sh.rustup.rs serves, from rustup's own release host. Startup files are handled below.
   curl --proto '=https' --tlsv1.2 -fsSL https://static.rust-lang.org/rustup/rustup-init.sh -o "$rustup_init"
-  # Startup files are handled below, the same way as Mason's, so rustup leaves them alone.
-  sh "$rustup_init" -y --no-modify-path --profile default --default-toolchain stable </dev/null
-  case ":$PATH:" in *":$cargo_home/bin:"*) ;; *) export PATH="$cargo_home/bin:$PATH" ;; esac
+  run sh "$rustup_init" -y --no-modify-path --profile default --default-toolchain stable </dev/null
+  cargo_on_path
+  rust_note=installed
 fi
-have cargo || { echo 'cargo is not on PATH after the rustup install; check rustup show, then rerun.' >&2; exit 1; }
-echo "Using $(cargo --version) at $(command -v cargo)."
-# rust-analyzer, the Rust language server that Neovim's Rust extra (rustaceanvim) runs from
-# PATH. rustup ships it as a component of the default toolchain (adding it again is a no-op,
-# and rustup update keeps it current). Without the component, rustup's rust-analyzer shim is
-# still on PATH but only prints an error, so Neovim would find it and fail to start it.
+have cargo || die 'cargo is not on PATH after the rustup install; check rustup show, then rerun.'
+detail "Using $(cargo --version) at $(command -v cargo)."
+# rust-analyzer for Neovim's Rust extra. Without the component, rustup's shim is on PATH but
+# only errors, so Neovim would find it and fail to start it.
 if have rustup; then
   rust_toolchain=$(rustup default)
-  rust_toolchain=${rust_toolchain%% *}
-  rustup component add rust-analyzer --toolchain "$rust_toolchain" ||
-    echo "Could not add rust-analyzer to $rust_toolchain; Neovim's Rust support needs it." >&2
+  run rustup component add rust-analyzer --toolchain "${rust_toolchain%% *}" ||
+    warn "Could not add rust-analyzer to ${rust_toolchain%% *}; Neovim's Rust support needs it."
 fi
-if rust_analyzer_version=$(rust-analyzer --version 2>/dev/null); then
-  echo "Using $rust_analyzer_version at $(command -v rust-analyzer)."
-elif have rustup; then
-  echo 'rust-analyzer does not run; check rustup component list --installed, then rerun.' >&2
+if ! rust-analyzer --version >/dev/null 2>&1; then
+  if have rustup; then
+    warn 'rust-analyzer does not run; check rustup component list --installed, then rerun.'
+  else
+    warn 'rust-analyzer is not installed; Neovim needs it for Rust files.' \
+      'Install it with the package manager that installed Rust (Homebrew: brew install rust-analyzer).'
+  fi
+fi
+# cargo install puts tools in cargo's bin, so it goes first on PATH, as rustup's own setup does.
+# Skipped if a startup file already loads rustup's env file or names that folder.
+cargo_checked=("$shell_rc")
+[[ "$login_shell" != zsh ]] || cargo_checked=("${ZDOTDIR:-$HOME}/.zshenv" "$shell_rc")
+if cargo_found=$(grep -Els '\.cargo/(env|bin)' "${cargo_checked[@]}" || true); [[ -n "$cargo_found" ]]; then
+  detail "${cargo_found%%$'\n'*} already sets up cargo's PATH."
 else
-  echo 'rust-analyzer is not installed. Neovim needs it for Rust files: install it with the' >&2
-  echo 'package manager that installed Rust (Homebrew: brew install rust-analyzer).' >&2
+  # shellcheck disable=SC2016 # written literally; expands when the shell starts
+  rc_add "$shell_rc" '^# Cargo tools on PATH \(added by dotfiles install\.sh\)$' \
+    'case ":$PATH:" in *":${CARGO_HOME:-$HOME/.cargo}/bin:"*) ;; *) export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH" ;; esac' \
+    '# Cargo tools on PATH (added by dotfiles install.sh)'
 fi
-block_end Rust
-##### end Rust install #####
-
-##### Cargo PATH setup #####
-# cargo install puts tools in cargo's bin directory with any Rust install, so it goes first on
-# PATH, as rustup's own setup does. Safe to rerun: the startup line is added once, and the line
-# itself never adds the directory to PATH twice. Skipped if a startup file already loads
-# rustup's env file or names the directory (as rustup's default setup does).
-printf '\n##### Cargo PATH setup #####\n'
-cargo_marker='# Cargo tools on PATH (added by dotfiles install.sh)'
-# Single quotes: the line is written literally and expands when the shell starts.
-# shellcheck disable=SC2016
-cargo_line='case ":$PATH:" in *":${CARGO_HOME:-$HOME/.cargo}/bin:"*) ;; *) export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH" ;; esac'
-case "${SHELL##*/}" in
-  zsh) cargo_rc="${ZDOTDIR:-$HOME}/.zshrc"; cargo_checked=("${ZDOTDIR:-$HOME}/.zshenv" "$cargo_rc") ;;
-  bash) cargo_rc="$HOME/.bashrc"; cargo_checked=("$cargo_rc") ;;
-  *) echo 'Automatic cargo PATH setup supports bash and zsh.' >&2; exit 1 ;;
-esac
-if grep -Fqx "$cargo_marker" "$cargo_rc" 2>/dev/null; then
-  echo "Already configured in $cargo_rc; skipped."
-elif cargo_found=$(grep -Els '\.cargo/(env|bin)' "${cargo_checked[@]}" || true); [[ -n "$cargo_found" ]]; then
-  echo "${cargo_found%%$'\n'*} already sets up cargo's PATH; skipped."
-else
-  mkdir -p "$(dirname "$cargo_rc")"
-  printf '\n%s\n%s\n' "$cargo_marker" "$cargo_line" >> "$cargo_rc"
-  echo "Added cargo's bin directory to PATH in $cargo_rc."
-fi
-printf '##### end Cargo PATH setup #####\n'
-##### end Cargo PATH setup #####
+cargo_version=$(cargo --version)
+ok "${cargo_version%% (*}${rust_note:+, $rust_note}"

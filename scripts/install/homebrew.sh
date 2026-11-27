@@ -1,33 +1,29 @@
-# Install Homebrew as the current user, allowing its normal setup prompts.
-##### Homebrew install #####
-printf '\n##### Homebrew install #####\n'
-# shellcheck disable=SC2154 # _dotfiles_download_dir is set by scripts/lib/temp.sh
+# Homebrew as the current user (its installer may prompt), then on PATH for future shells.
+# shellcheck disable=SC2154 # globals come from files install.sh sources earlier
+step Homebrew
+brew_new=false
 if ! have brew; then
   curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh -o "$_dotfiles_download_dir/homebrew.sh"
-  /bin/bash "$_dotfiles_download_dir/homebrew.sh"
-  for prefix in /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
-    if [[ -x "$prefix/bin/brew" ]]; then export PATH="$prefix/bin:$prefix/sbin:$PATH"; break; fi
-  done
+  run_live /bin/bash "$_dotfiles_download_dir/homebrew.sh"
+  load_brew
+  brew_new=true
 fi
-have brew || { echo 'Homebrew unavailable after installation.' >&2; exit 1; }
-# Add Homebrew to future shells without replacing existing startup content.
-case "${SHELL##*/}" in
-  zsh) profiles=("${ZDOTDIR:-$HOME}/.zprofile" "${ZDOTDIR:-$HOME}/.zshrc") ;;
-  bash)
-    login_profile="$HOME/.profile"
-    [[ ! -f "$HOME/.bash_login" ]] || login_profile="$HOME/.bash_login"
-    [[ ! -f "$HOME/.bash_profile" ]] || login_profile="$HOME/.bash_profile"
-    profiles=("$login_profile" "$HOME/.bashrc")
-    ;;
-  *) echo 'Automatic Homebrew setup supports bash and zsh.' >&2; exit 1 ;;
-esac
+have brew || die 'Homebrew unavailable after installation.'
+# Add shellenv to the login profile and the rc file, unless a shellenv line is already there.
+if [[ "$login_shell" == zsh ]]; then
+  brew_profile="${ZDOTDIR:-$HOME}/.zprofile"
+else
+  brew_profile="$HOME/.profile"
+  [[ ! -f "$HOME/.bash_login" ]] || brew_profile="$HOME/.bash_login"
+  [[ ! -f "$HOME/.bash_profile" ]] || brew_profile="$HOME/.bash_profile"
+fi
 # shellcheck disable=SC2016 # literal startup line; expands when the shell starts
 printf -v shellenv_line 'eval "$("%s" shellenv)"' "$(command -v brew)"
-for profile in "${profiles[@]}"; do
+for profile in "$brew_profile" "$shell_rc"; do
   if ! grep -Eq '^[[:space:]]*eval[[:space:]].*shellenv' "$profile" 2>/dev/null; then
     mkdir -p "$(dirname "$profile")"
     printf '\n%s\n' "$shellenv_line" >> "$profile"
+    dotfiles_rc_changes+=("$profile")
   fi
 done
-printf '##### end Homebrew install #####\n'
-##### end Homebrew install #####
+if [[ "$brew_new" == true ]]; then ok installed; else ok; fi

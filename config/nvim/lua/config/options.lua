@@ -1,12 +1,7 @@
--- Options are automatically loaded before lazy.nvim startup
--- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
--- Add any additional options here
+-- Loaded before lazy.nvim starts, on top of LazyVim's defaults (lazyvim/config/options.lua).
 
--- Copy through the terminal (OSC 52), so yanks reach the clipboard of the machine
--- you're viewing from, such as the Mac running Rex. Paste does not ask the terminal:
--- most terminals never answer an OSC 52 read, so p would hang for up to 10 seconds.
--- Instead p pastes this Neovim's own last yank (keeping linewise or charwise), and
--- Cmd+V in the terminal still pastes whatever is on the Mac clipboard.
+-- Yanks go to your local clipboard through the terminal (OSC 52). p pastes Neovim's own last
+-- yank: most terminals never answer an OSC 52 read, so asking would hang p for ~10s.
 do
   local osc52 = require("vim.ui.clipboard.osc52")
   local last = {} -- register name -> { lines, regtype } of the last yank into it

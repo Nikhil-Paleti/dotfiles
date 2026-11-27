@@ -7,10 +7,8 @@ return {
           settings = {
             python = {
               analysis = {
-                -- Don't crawl Bazel's output symlinks (bazel-bin, bazel-out, ...), which can be
-                -- huge in a monorepo. Imports from them still resolve. Setting this replaces
-                -- Pyright's default skip list, so that list is repeated here.
-                -- A project's own pyrightconfig.json or [tool.pyright] takes precedence.
+                -- Skip Bazel's huge output symlinks (imports from them still resolve). This
+                -- replaces Pyright's default list, so that is repeated here.
                 exclude = { "**/node_modules", "**/__pycache__", "**/.*", "**/bazel-*" },
               },
             },
