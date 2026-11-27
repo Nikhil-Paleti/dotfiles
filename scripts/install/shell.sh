@@ -25,7 +25,8 @@ if [[ "$login_shell" != bash ]]; then
   skip "shell is $login_shell"
 elif [[ -f "$blesh_dir/ble.sh" ]]; then
   run bash "$blesh_dir/ble.sh" --update </dev/null
-  ok "$(bash "$blesh_dir/ble.sh" --version | head -n 1)"
+  blesh_version=$(bash "$blesh_dir/ble.sh" --version | head -n 1)
+  ok "${blesh_version##* }"
 else
   curl -fsSL https://github.com/akinomyoga/ble.sh/releases/download/nightly/ble-nightly.tar.xz \
     -o "$_dotfiles_download_dir/ble-nightly.tar.xz"
