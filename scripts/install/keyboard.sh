@@ -121,6 +121,37 @@ case "$os" in
       kb_sudo launchctl kickstart -k system/dev.kanata.kanata
       kanata_wait_outcome "$before"
     }
+    # Caps Lock is Esc on the Mac's built-in keyboard too. Kanata leaves that keyboard alone,
+    # so macOS's own key remapping (hidutil, Apple TN2450) does it, from a login item, since a
+    # hidutil mapping lasts only until restart. Only built-in keyboards; no sudo. It replaces any
+    # other key mapping on the built-in keyboard (System Settings > Keyboard > Modifier Keys).
+    capsesc_plist="$HOME/Library/LaunchAgents/dev.dotfiles.capslock-esc.plist"
+    capsesc_map='{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":30064771129,"HIDKeyboardModifierMappingDst":30064771113}]}'
+    cat >"$kb_tmp/capsesc.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>dev.dotfiles.capslock-esc</string>
+  <key>ProgramArguments</key><array>
+    <string>/usr/bin/hidutil</string><string>property</string>
+    <string>--matching</string><string>{"Built-In":true}</string>
+    <string>--set</string><string>$capsesc_map</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+</dict>
+</plist>
+PLIST
+    if [[ -n "${CI:-}" ]]; then
+      echo 'CI: Caps Lock to Esc login item skipped (needs a login session).'
+    elif ! cmp -s "$kb_tmp/capsesc.plist" "$capsesc_plist"; then
+      mkdir -p "$(dirname "$capsesc_plist")"
+      cp "$kb_tmp/capsesc.plist" "$capsesc_plist"
+      launchctl bootout "gui/$(id -u)" "$capsesc_plist" 2>/dev/null || true
+      launchctl bootstrap "gui/$(id -u)" "$capsesc_plist" ||
+        hidutil property --matching '{"Built-In":true}' --set "$capsesc_map" >/dev/null
+      echo "Caps Lock is Esc on the built-in keyboard (login item: $capsesc_plist)."
+    fi
     if [[ -n "${CI:-}" ]]; then
       kanata_apply_config
       echo 'CI: driver, kanata binary and LaunchDaemons skipped (they need sudo and a real keyboard).'

@@ -150,8 +150,9 @@ Run `gh auth status` once, and `gh auth login` if needed. Then use
 
 Hold the left half of the spacebar, or Caps Lock, for numbers, brackets and
 arrows on the home row. Tap left space for Space and Caps Lock for Esc. On
-Windows this works on any keyboard. On the Mac it's only on the ROG keyboard,
-where Alt and Command are also swapped. Every other key is unchanged.
+Windows this works on any keyboard. On the Mac the layer is only on the ROG
+keyboard, where Alt and Command are also swapped; on the built-in keyboard,
+Caps Lock is just Esc. Every other key is unchanged.
 
 ```text
 q w e r t   y u i o p   ->   1 2 3 4 5   6 7 8 9 0
@@ -192,6 +193,9 @@ z x c v b   n m , . /   ->   } ) ] > +   _ - & | \
   plugged in later, or replugged, is picked up.
 - Alt and Command are swapped in Kanata, so the key next to the spacebar is
   Command. macOS's own swap doesn't reach a keyboard Kanata grabs.
+- On the built-in keyboard, Caps Lock is Esc through macOS's own remapping
+  (`hidutil`, run at login by `~/Library/LaunchAgents/dev.dotfiles.capslock-esc.plist`).
+  It replaces any Modifier Keys setting on that keyboard.
 - The log is `/var/log/kanata.log`. Left Ctrl + Space + Esc quits Kanata.
 
 The setup follows [Kanata's macOS guide][kanata-mac]. It's skipped if
