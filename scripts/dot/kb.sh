@@ -14,7 +14,7 @@ kb_where() {
 
 dot_kb() {
   local action=${1:-status} where
-  case "$action" in start|stop|status) ;; *) echo 'Usage: dot kb start|stop|status' >&2; return 2 ;; esac
+  case "$action" in start|stop|status) ;; *) echo 'Usage: dot kb [status|start|stop]  (dot kb --help)' >&2; return 2 ;; esac
   where=$(kb_where)
   case "$where" in
     mac|wsl) "kb_${where}_$action" ;;
