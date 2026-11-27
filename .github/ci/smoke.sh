@@ -90,6 +90,42 @@ SCOUT_PLUGIN="$scout_dir" SCOUT_REPO="$scout_tmp/fresh" \
 rm -rf "$scout_tmp" "$SCOUT_CACHE_DIR"
 unset SCOUT_CACHE_DIR
 
+echo '--- Status bar branch'
+# lua/repo_head.lua (the status bar's branch) in a git repo on a branch, a jj repo with a
+# bookmark, and a folder outside any repo. It loads alone, without the plugins.
+head_tmp=$(mktemp -d)
+mkdir -p "$head_tmp/git" "$head_tmp/jj" "$head_tmp/plain"
+git init -q -b trunk "$head_tmp/git"
+git -C "$head_tmp/git" -c user.name=ci -c user.email=ci@example.invalid commit -q --allow-empty -m init
+(cd "$head_tmp/jj" && jj git init --colocate >/dev/null 2>&1 && jj bookmark create topic -r @ >/dev/null 2>&1)
+cat > "$head_tmp/check.lua" <<'LUA'
+vim.opt.rtp:prepend(vim.env.NVIM_CONFIG)
+local head = require("repo_head")
+local function text_in(dir, want_empty)
+  vim.cmd("cd " .. vim.fn.fnameescape(dir))
+  vim.wait(5000, function() return want_empty or head.get() ~= "" end, 50)
+  return head.get()
+end
+local commit = vim.trim(vim.fn.system({ "git", "-C", vim.env.HEAD_TMP .. "/git", "rev-parse", "--short=6", "HEAD" }))
+local change = vim.trim(vim.fn.system({ "jj", "-R", vim.env.HEAD_TMP .. "/jj", "log", "--no-graph", "--ignore-working-copy", "-r", "@", "-T", "change_id.shortest(8)" }))
+local cases = {
+  { "git", head.git_icon .. "trunk " .. commit },
+  { "jj", head.jj_icon .. "topic " .. change },
+  { "plain", "" },
+}
+local ok = true
+for _, case in ipairs(cases) do
+  local got = text_in(vim.env.HEAD_TMP .. "/" .. case[1], case[2] == "")
+  io.stdout:write(("status bar branch, %s: [%s]\n"):format(case[1], got))
+  ok = ok and got == case[2]
+end
+vim.cmd(ok and "qa!" or "cq!")
+LUA
+HEAD_TMP="$head_tmp" NVIM_CONFIG="$config_home/nvim" \
+  nvim --headless -u NONE -i NONE -c "luafile $head_tmp/check.lua" </dev/null ||
+  { echo 'The status bar branch is wrong in a git repo, a jj repo or outside a repo.' >&2; exit 1; }
+rm -rf "$head_tmp"
+
 echo "--- New ${SHELL##*/} shell"
 # stdin is not a terminal here, so line editors such as ble.sh may print warnings;
 # only the PATH lookups below decide the result.
