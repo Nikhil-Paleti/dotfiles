@@ -15,7 +15,7 @@
 DOTFILES_VERBOSE=${DOTFILES_VERBOSE:-0}
 [[ -t 1 ]] && _dotfiles_tty=1 || _dotfiles_tty=0
 _dotfiles_step='' _dotfiles_pending=0
-_dotfiles_log=/dev/null # points into the owned temp dir once scripts/lib/temp.sh runs
+_dotfiles_log=/dev/null # points into the temp dir once scripts/lib/temp.sh runs
 verbose() { [[ "$DOTFILES_VERBOSE" == 1 ]]; }
 have() { command -v "$1" >/dev/null 2>&1; }
 # A path with $HOME shown as ~, for messages.
@@ -53,17 +53,14 @@ load_brew() {
   done
 }
 
-# Install each missing command with Homebrew (formulas from scripts/components.sh).
+# install_tools LABEL command:formula...: install each missing command with Homebrew. The
+# lists are in scripts/components.sh.
 install_tools() {
-  local label=$1 command_name formula item installed=()
+  local label=$1 item command_name formula installed=()
   shift
   step "$label"
-  for command_name in "$@"; do
-    formula=''
-    for item in "${requirements[@]}"; do
-      if [[ "${item%%:*}" == "$command_name" ]]; then formula=${item#*:}; break; fi
-    done
-    [[ -n "$formula" ]] || die "Unknown component: $command_name"
+  for item in "$@"; do
+    command_name=${item%%:*} formula=${item#*:}
     if have "$command_name"; then detail "$command_name: already installed"; continue; fi
     run brew install "$formula"
     have "$command_name" || die "$command_name is not on PATH after brew install $formula; resolve package-manager conflicts and retry."
