@@ -45,26 +45,30 @@ kb_sudo() {
   fi
   sudo "$@"
 }
-# The repo config with the names from $kanata_names in place of its marker line.
+# The repo config with the names from $kanata_names in place of its marker line, and its
+# Alt/Command blocks rebuilt for the built-in keyboard names among them.
 kanata_render() {
-  local names='' line
+  local names='' line builtin=()
   if [[ -f "$kanata_names" ]]; then
     while IFS= read -r line || [[ -n "$line" ]]; do
       [[ -n "$line" && "$line" != \#* ]] || continue
       if [[ "$line" == *'"'* ]]; then warn "Skipping keyboard name with a quote in $kanata_names: $line"; continue; fi
       names+=" \"$line\""
+      if printf '%s' "$line" | grep -qi '^apple internal keyboard'; then builtin+=("$line"); fi
     done <"$kanata_names"
   fi
-  if [[ -n "$names" ]]; then
-    KB_NAMES="${names# }" awk '/;; @macos-keyboards@/ {
+  KB_NAMES="${names# }" KB_SWAP="$(kanata_swap_block ${builtin[@]+"${builtin[@]}"})" awk '
+    /;; @macos-keyboards@/ && ENVIRON["KB_NAMES"] != "" {
       print "  macos-dev-names-include (" ENVIRON["KB_NAMES"] ")"
       print "  macos-continue-if-no-devs-found yes"
       next
-    } { print }' "$kanata_src"
-  else
-    cat "$kanata_src"
-  fi
+    }
+    /^;; @macos-swap-begin@/ { print; print ENVIRON["KB_SWAP"]; skip = 1; next }
+    /^;; @macos-swap-end@/ { skip = 0 }
+    !skip { print }' "$kanata_src"
 }
+# Whether the rendered config swaps Alt and Command on any keyboard.
+kanata_swaps() { grep -qF '(platform (macos) (definputdevices' "$kanata_cfg" 2>/dev/null; }
 # kanata (a root daemon) reads the rendered config from $kanata_cfg.
 kanata_cfg_changed=false
 kanata_apply_config() {
@@ -177,10 +181,12 @@ else
   while IFS= read -r kb_name; do
     [[ -n "$kb_name" ]] || continue
     grep -qxF -- "$kb_name" "$kanata_names" || { printf '%s\n' "$kb_name" >>"$kanata_names"; note "Kanata will grab this keyboard: $kb_name ($(short_path "$kanata_names"))"; }
-  done < <({ "$kanata_bin" --list 2>/dev/null || sudo -n "$kanata_bin" --list 2>/dev/null; } | sed -nE 's/^0x[0-9A-Fa-f]+ +[0-9]+ +[0-9]+ +//p' | sed -E 's/[[:space:]]+$//' | grep -iE 'rog|asus|apple internal keyboard' | sort -u || true)
+  done < <({ "$kanata_bin" --list 2>/dev/null || sudo -n "$kanata_bin" --list 2>/dev/null; } | sed -nE 's/^0x[0-9A-Fa-f]+ +[0-9]+ +[0-9]+ +//p' | sed -E 's/[[:space:]]+$//' | grep -iE 'rog|asus|apple internal keyboard' | grep -viF karabiner | sort -u || true)
   grep -qvE '^(#|$)' "$kanata_names" || detail 'No keyboard found to list, so Kanata grabs every keyboard. Plug the ROG keyboard in and rerun to list it.'
   grep -qiE 'rog|asus' "$kanata_names" || detail 'No ROG/ASUS keyboard listed yet. Plug it in and rerun so Kanata grabs it too.'
   kanata_apply_config
+  kanata_swaps || warn "Kanata couldn't find the built-in keyboard, so Option and Command aren't swapped on any keyboard." \
+    'Rerun install.sh to try again.'
   "$kanata_bin" --check -c "$kanata_cfg" >/dev/null || die "Kanata rejected $kanata_cfg; fix it, then rerun."
   # 5. kanata itself, as root at boot (it must be root to reach the driver).
   kb_render dev.kanata.kanata.plist KANATA_BIN="$kanata_bin" KANATA_CFG="$kanata_cfg" KANATA_LOG="$kanata_log" >"$kb_tmp/kanata.plist"

@@ -27,6 +27,29 @@ kb_disabled() { launchctl print-disabled system 2>/dev/null | grep -Eq "\"$1\" =
 # The keyboards Kanata grabs on the Mac, comma separated; empty means every keyboard.
 kanata_grabs() { grep -vE '^(#|$)' "$kanata_names" 2>/dev/null | paste -sd ',' - | sed 's/,/, /g' || true; }
 
+# The macOS Alt/Command blocks of kanata.kbd for the built-in keyboard names given (as
+# `kanata --list` prints them): those keyboards keep their keys and every other one gets the
+# swap. With no names, no keyboard gets the swap, so the built-in one can't get it by mistake.
+kanata_swap_block() {
+  if (($# == 0)); then
+    printf '%s\n' '(platform (macos)' '  (defalias lalt lalt  lmet lmet  ralt ralt  rmet rmet)' ')'
+    return 0
+  fi
+  local devices='' cond='' id=0 name key swap
+  for name in "$@"; do
+    id=$((id + 1))
+    devices+=" $id ((name \"$name\"))"
+    cond+=" (device-history $id 1)"
+  done
+  if ((id > 1)); then cond="(or${cond})"; else cond="${cond# }"; fi
+  printf '(platform (macos) (definputdevices%s))\n(platform (macos)\n  (defalias\n' "$devices"
+  for key in lalt:lmet lmet:lalt ralt:rmet rmet:ralt; do
+    swap=${key#*:} key=${key%%:*}
+    printf '    %s (switch (%s) %s break () %s break)\n' "$key" "$cond" "$key" "$swap"
+  done
+  printf '  )\n)\n'
+}
+
 # WSL: Windows runs Kanata. cmd.exe runs from its own (Windows) folder, since it warns about
 # a WSL working directory.
 win_run() {

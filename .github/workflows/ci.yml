@@ -43,6 +43,20 @@ jobs:
             "$RUNNER_TEMP/kanata-mac.kbd" > "$RUNNER_TEMP/kanata-mac-blocks.kbd"
           grep -q 'definputdevices' "$RUNNER_TEMP/kanata-mac-blocks.kbd"
           "$RUNNER_TEMP/kanata" --check -c "$RUNNER_TEMP/kanata-mac-blocks.kbd"
+          # The Alt/Command blocks the installer writes: for one or two built-in keyboard names,
+          # and for none (no swap anywhere).
+          source scripts/lib/kanata.sh
+          for names in 'Apple Internal Keyboard / Trackpad' 'Apple Internal Keyboard / Trackpad|Apple Internal Keyboard' ''; do
+            IFS='|' read -r -a builtin <<<"$names"
+            KB_SWAP="$(kanata_swap_block ${builtin[@]+"${builtin[@]}"})" awk '
+              /^;; @macos-swap-begin@/ { print ENVIRON["KB_SWAP"]; skip = 1; next }
+              /^;; @macos-swap-end@/ { skip = 0; next }
+              !skip { print }' "$RUNNER_TEMP/kanata-mac-blocks.kbd" |
+              sed 's/(platform (macos)/(platform (linux)/' > "$RUNNER_TEMP/kanata-swap.kbd"
+            if [[ -n "$names" ]]; then grep -qF 'definputdevices 1 ((name "Apple Internal Keyboard / Trackpad"))' "$RUNNER_TEMP/kanata-swap.kbd"
+            elif grep -qF '(platform (linux) (definputdevices' "$RUNNER_TEMP/kanata-swap.kbd"; then exit 1; fi
+            "$RUNNER_TEMP/kanata" --check -c "$RUNNER_TEMP/kanata-swap.kbd"
+          done
 
   install:
     name: install (${{ matrix.os }}, ${{ matrix.shell }})

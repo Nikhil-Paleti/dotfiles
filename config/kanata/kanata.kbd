@@ -84,8 +84,11 @@
 ;; keys. Kanata knows it by name (definputdevices); any other keyboard gets the swap. Kanata
 ;; names only the keyboards present when it starts, which the built-in one always is, so the
 ;; ROG keyboard plugged in later still gets the swap.
-;; Device 1 is the built-in keyboard. One item per platform block, as Kanata requires.
-(platform (macos) (definputdevices 1 ((name "Apple Internal Keyboard"))))
+;; The installer replaces the block between the markers with the built-in keyboard's names
+;; as kanata --list prints them (kanata_swap_block in scripts/lib/kanata.sh). If it finds no
+;; built-in keyboard, no keyboard gets the swap, so the built-in one never does.
+;; @macos-swap-begin@
+(platform (macos) (definputdevices 1 ((name "Apple Internal Keyboard / Trackpad"))))
 (platform (macos)
   (defalias
     lalt (switch ((device-history 1 1)) lalt break () lmet break)
@@ -94,6 +97,7 @@
     rmet (switch ((device-history 1 1)) rmet break () ralt break)
   )
 )
+;; @macos-swap-end@
 (platform (win winiov2 wintercept linux)
   (defalias lalt lalt  lmet lmet  ralt ralt  rmet rmet)
 )
