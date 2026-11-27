@@ -1,4 +1,4 @@
-# `dot kb start|stop|status`: the Kanata keyboard layer, on whichever machine runs it. Status
+# `dot kb start|stop|restart|status`: the Kanata keyboard layer, on whichever machine runs it. Status
 # asks launchd (Mac) or Windows' task list (WSL) what's running now; it never reads the log.
 # Setup and the macOS approvals stay in install.sh (dot update).
 # shellcheck disable=SC2154 # kanata_* paths come from scripts/lib/kanata.sh
@@ -14,7 +14,7 @@ kb_where() {
 
 dot_kb() {
   local action=${1:-status} where
-  case "$action" in start|stop|status) ;; *) echo 'Usage: dot kb [status|start|stop]  (dot kb --help)' >&2; return 2 ;; esac
+  case "$action" in start|stop|restart|status) ;; *) echo 'Usage: dot kb [status|start|stop|restart]  (dot kb --help)' >&2; return 2 ;; esac
   where=$(kb_where)
   case "$where" in
     mac|wsl) "kb_${where}_$action" ;;
@@ -29,7 +29,7 @@ dot_kb() {
 
 # One line on Kanata as launchd sees it now; returns 0 only when it's running.
 kb_mac_report() {
-  local pid code grabs
+  local pid code
   if [[ ! -f "$kanata_plist" ]]; then
     echo 'Kanata is not set up on this Mac. Run dot update in a terminal.'
     return 1
@@ -40,8 +40,7 @@ kb_mac_report() {
   fi
   if kanata_running; then
     pid=$(kb_field "$kanata_label" pid)
-    grabs=$(kanata_grabs)
-    echo "Kanata is running (pid $pid) on ${grabs:-every keyboard}."
+    echo "Kanata is running (pid $pid) on every keyboard."
     if ! kb_loaded "$vhid_label"; then
       echo "! The Karabiner driver daemon is not loaded, so keys won't reach macOS. Run dot kb start." >&2
     fi
@@ -87,6 +86,17 @@ kb_mac_stop() {
   for _ in {1..10}; do kb_loaded "$kanata_label" || break; sleep 1; done
   if kb_loaded "$kanata_label"; then echo 'Kanata did not stop.' >&2; return 1; fi
   echo 'Kanata stopped. It starts again with dot kb start, or when the Mac restarts.'
+}
+
+# Kanata grabs the keyboards connected when it starts, so a newly plugged-in one needs this.
+kb_mac_restart() {
+  if ! kb_loaded "$kanata_label"; then kb_mac_start; return; fi
+  sudo -v -p 'Password to restart Kanata: ' || return 1
+  sudo launchctl kickstart -k "system/$kanata_label" || true
+  local _
+  for _ in {1..10}; do kanata_running && break; sleep 1; done
+  sleep 2
+  kb_mac_report
 }
 
 # --- WSL: Kanata runs on Windows, started from the Startup-folder shortcut in
@@ -138,3 +148,5 @@ kb_wsl_stop() {
   fi
   echo 'Kanata stopped on Windows. It starts again with dot kb start, or at your next Windows login.'
 }
+
+kb_wsl_restart() { kb_wsl_stop && kb_wsl_start; }

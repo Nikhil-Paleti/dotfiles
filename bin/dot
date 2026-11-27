@@ -20,7 +20,7 @@ Usage: dot <command> [options]
 
 Commands:
   update     pull this repo and rerun the installer
-  kb         start, stop or check the keyboard layer
+  kb         start, stop, restart or check the keyboard layer
   doctor     check each installed piece and say what's broken
   version    this checkout's version and the last installs here
   help       this list
@@ -34,12 +34,13 @@ Pulls this repo, then reruns install.sh, which only changes what is out of date.
   -v, --verbose   show every command's output
 HELP
     kb|keyboard) cat <<'HELP' ;;
-Usage: dot kb [status|start|stop]
+Usage: dot kb [status|start|stop|restart]
 
 The Kanata keyboard layer, on the Mac or, from WSL, on Windows.
   status   say whether Kanata is running now (the default)
   start    start Kanata
   stop     stop Kanata until dot kb start or the next restart (Windows: login)
+  restart  restart Kanata, so it grabs a keyboard plugged in since it started
 HELP
     doctor) cat <<'HELP' ;;
 Usage: dot doctor

@@ -45,40 +45,19 @@ kb_sudo() {
   fi
   sudo "$@"
 }
-# The repo config with the names from $kanata_names in place of its marker line.
-kanata_render() {
-  local names='' line
-  if [[ -f "$kanata_names" ]]; then
-    while IFS= read -r line || [[ -n "$line" ]]; do
-      [[ -n "$line" && "$line" != \#* ]] || continue
-      if [[ "$line" == *'"'* ]]; then warn "Skipping keyboard name with a quote in $kanata_names: $line"; continue; fi
-      names+=" \"$line\""
-    done <"$kanata_names"
-  fi
-  if [[ -n "$names" ]]; then
-    KB_NAMES="${names# }" awk '/;; @macos-keyboards@/ {
-      print "  macos-dev-names-include (" ENVIRON["KB_NAMES"] ")"
-      print "  macos-continue-if-no-devs-found yes"
-      next
-    } { print }' "$kanata_src"
-  else
-    cat "$kanata_src"
-  fi
-}
-# kanata (a root daemon) reads the rendered config from $kanata_cfg.
+# kanata (a root daemon) reads its copy of the repo config from $kanata_cfg.
 kanata_cfg_changed=false
 kanata_apply_config() {
-  kanata_render >"$kb_tmp/kanata.kbd"
-  if ! cmp -s "$kb_tmp/kanata.kbd" "$kanata_cfg"; then
-    cp "$kb_tmp/kanata.kbd" "$kanata_cfg"
+  if ! cmp -s "$kanata_src" "$kanata_cfg"; then
+    cp "$kanata_src" "$kanata_cfg"
     kanata_cfg_changed=true
   fi
   detail "Kanata config applied: $kanata_cfg"
 }
 kanata_read_log() { if [[ -r "$kanata_log" ]]; then cat "$kanata_log"; else sudo -n cat "$kanata_log" 2>/dev/null || true; fi; }
 kanata_log_lines() { kanata_read_log | wc -l | tr -d ' '; }
-# How the newest Kanata start after log line $1 went: ok, waiting (no listed keyboard is
-# plugged in), input-monitoring, accessibility, driver, grab-failed, pending or none.
+# How the newest Kanata start after log line $1 went: ok, input-monitoring, accessibility,
+# driver, grab-failed, pending or none.
 kanata_outcome() {
   local after="$1" start run
   start=$(kanata_read_log | awk -v after="$after" 'NR > after && /kanata v[0-9.]+ starting/ { n = NR } END { print n }')
@@ -86,7 +65,6 @@ kanata_outcome() {
   run=$(kanata_read_log | tail -n "+$start")
   case "$run" in
     *'Starting kanata proper'*) echo ok ;;
-    *'Polling for device connection'*|*'Waiting for device connection'*) echo waiting ;;
     *'Input Monitoring permission'*) echo input-monitoring ;;
     *'needs macOS Accessibility'*|*'Accessibility permission request failed'*) echo accessibility ;;
     *'driver is not activated'*) echo driver ;;
@@ -171,15 +149,7 @@ else
     kb_sudo install -m 755 -o root -g wheel "$kb_tmp/kanata" "$kanata_bin"
     kanata_bin_changed=true
   fi
-  # 4. The built-in keyboard and any ROG/ASUS keyboard plugged in now join the list. Only
-  # listed keyboards are picked up when plugged in after Kanata starts (see the config).
-  [[ -f "$kanata_names" ]] || echo '# Keyboards Kanata grabs, one name per line, as kanata --list prints them.' >"$kanata_names"
-  while IFS= read -r kb_name; do
-    [[ -n "$kb_name" ]] || continue
-    grep -qxF -- "$kb_name" "$kanata_names" || { printf '%s\n' "$kb_name" >>"$kanata_names"; note "Kanata will grab this keyboard: $kb_name ($(short_path "$kanata_names"))"; }
-  done < <({ "$kanata_bin" --list 2>/dev/null || sudo -n "$kanata_bin" --list 2>/dev/null; } | sed -nE 's/^0x[0-9A-Fa-f]+ +[0-9]+ +[0-9]+ +//p' | sed -E 's/[[:space:]]+$//' | grep -iE 'rog|asus|apple internal keyboard' | sort -u || true)
-  grep -qvE '^(#|$)' "$kanata_names" || detail 'No keyboard found to list, so Kanata grabs every keyboard. Plug the ROG keyboard in and rerun to list it.'
-  grep -qiE 'rog|asus' "$kanata_names" || detail 'No ROG/ASUS keyboard listed yet. Plug it in and rerun so Kanata grabs it too.'
+  # 4. The config. Kanata grabs every keyboard connected when it starts.
   kanata_apply_config
   "$kanata_bin" --check -c "$kanata_cfg" >/dev/null || die "Kanata rejected $kanata_cfg; fix it, then rerun."
   # 5. kanata itself, as root at boot (it must be root to reach the driver).
@@ -200,10 +170,10 @@ else
     # old success in the log says nothing about a Kanata that has since stopped.
     kanata_state=none
     if kanata_running; then kanata_state=$(kanata_outcome 0); fi
-    if [[ "$kanata_state" != ok && "$kanata_state" != waiting && -t 0 ]]; then kanata_restart; fi
+    if [[ "$kanata_state" != ok && -t 0 ]]; then kanata_restart; fi
   fi
   # 6. The one-time macOS approvals, one System Settings window at a time.
-  if [[ "$kanata_state" != ok && "$kanata_state" != waiting ]]; then
+  if [[ "$kanata_state" != ok ]]; then
     kb_panes=()
     systemextensionsctl list 2>/dev/null | grep -F org.pqrs.Karabiner-DriverKit-VirtualHIDDevice | grep -qF '[activated enabled]' ||
       kb_panes+=(driver)
@@ -239,10 +209,8 @@ else
       kanata_restart
     fi
   fi
-  kanata_grabs=$(kanata_grabs)
   case "$kanata_state" in
-    ok) ok "running on ${kanata_grabs:-every keyboard}" ;;
-    waiting) ok "running; plug in $kanata_grabs to start the layer" ;;
+    ok) ok 'running on every keyboard' ;;
     input-monitoring) fail 'Kanata lacks Input Monitoring' ;;
     accessibility) fail 'Kanata lacks Accessibility' ;;
     driver) fail 'the Karabiner driver is not switched on (Driver Extensions)' ;;
@@ -251,7 +219,7 @@ else
     *) fail "Kanata has not reported in; check $kanata_log" ;;
   esac
   case "$kanata_state" in
-    ok|waiting) ;;
+    ok) ;;
     grab-failed) warn 'Remove kanata (-) from Input Monitoring and Accessibility, then rerun bash install.sh in a terminal to add it back.' ;;
     none) warn 'Rerun bash install.sh in a terminal to start it.' ;;
     *) warn 'Rerun bash install.sh in a terminal; it walks you through each System Settings window.' ;;
