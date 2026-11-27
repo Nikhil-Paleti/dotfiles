@@ -32,6 +32,11 @@ jobs:
           unzip -p "$RUNNER_TEMP/kanata.zip" kanata_linux_x64 > "$RUNNER_TEMP/kanata"
           chmod +x "$RUNNER_TEMP/kanata"
           "$RUNNER_TEMP/kanata" --check -c config/kanata/kanata.kbd
+          # The Mac copy, with a keyboard name filled in the way scripts/install/keyboard.sh does.
+          sed 's/;; @macos-keyboards@/macos-dev-names-include ("CI keyboard") macos-continue-if-no-devs-found yes/' \
+            config/kanata/kanata.kbd > "$RUNNER_TEMP/kanata-mac.kbd"
+          grep -q 'macos-dev-names-include' "$RUNNER_TEMP/kanata-mac.kbd"
+          "$RUNNER_TEMP/kanata" --check -c "$RUNNER_TEMP/kanata-mac.kbd"
 
   install:
     name: install (${{ matrix.os }}, ${{ matrix.shell }})

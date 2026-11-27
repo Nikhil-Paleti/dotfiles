@@ -149,9 +149,10 @@ Run `gh auth status` once, and `gh auth login` if needed. Then use
 ## Keyboard layer
 
 Hold the left half of the spacebar, or Caps Lock, for numbers, brackets and
-arrows on the home row. Tap left space for Space and Caps Lock for Esc. Caps
-Lock makes it work on a laptop or any other keyboard. Every other key is
-unchanged.
+arrows on the home row. Tap left space for Space and Caps Lock for Esc. On
+Windows this works on any keyboard. On the Mac the layer is only on the ROG
+keyboard, where Alt and Command are also swapped; on the built-in keyboard,
+Caps Lock is just Esc. Every other key is unchanged.
 
 ```text
 q w e r t   y u i o p   ->   1 2 3 4 5   6 7 8 9 0
@@ -174,17 +175,28 @@ z x c v b   n m , . /   ->   } ) ] > +   _ - & | \
 
 ### Mac setup
 
-1. Run `bash install.sh`. It asks for sudo only if something is missing, and
-   installs:
-   - the Karabiner VirtualHIDDevice driver 6.2.0,
-   - `kanata` 1.12.0 in `/usr/local/bin` (pinned to work with that driver),
-   - LaunchDaemons that start both at boot, reading
-     `~/.config/kanata/kanata.kbd`.
-2. In System Settings, go to General > Login Items & Extensions > Driver
-   Extensions and turn on the driver.
-3. In Privacy & Security > Input Monitoring, add `/usr/local/bin/kanata`.
-4. In Privacy & Security > Accessibility, add `/usr/local/bin/kanata`.
-5. Run `sudo launchctl kickstart -k system/dev.kanata.kanata`.
+1. Plug the keyboard in, then run `bash install.sh` in a terminal. It asks
+   for your password once, and installs the Karabiner VirtualHIDDevice driver
+   6.2.0, `kanata` 1.12.0 in `/usr/local/bin`, and LaunchDaemons that start
+   both at boot.
+2. When it opens a System Settings window, do what the terminal says there,
+   then press Enter. There are up to three:
+   - Driver Extensions: switch on Karabiner-DriverKit-VirtualHIDDevice.
+   - Input Monitoring: add `/usr/local/bin/kanata` (+, then Cmd+Shift+G) and
+     switch it on.
+   - Accessibility: the same.
+3. The installer restarts Kanata and says whether it's working. If not, run
+   `bash install.sh` again.
+
+- Kanata grabs only the keyboards in `~/.config/kanata/macos-keyboards.txt`.
+  The installer adds the ROG/ASUS keyboards it sees. A listed keyboard
+  plugged in later, or replugged, is picked up.
+- Alt and Command are swapped in Kanata, so the key next to the spacebar is
+  Command. macOS's own swap doesn't reach a keyboard Kanata grabs.
+- On the built-in keyboard, Caps Lock is Esc through macOS's own remapping
+  (`hidutil`, run at login by `~/Library/LaunchAgents/dev.dotfiles.capslock-esc.plist`).
+  It replaces any Modifier Keys setting on that keyboard.
+- The log is `/var/log/kanata.log`. Left Ctrl + Space + Esc quits Kanata.
 
 The setup follows [Kanata's macOS guide][kanata-mac]. It's skipped if
 Karabiner-Elements is installed, since the two can't run together.
