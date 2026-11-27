@@ -164,14 +164,25 @@ NVIM_CONFIG="$config_home/nvim" \
   { echo 'The explorer pins the wrong folders while scrolling.' >&2; exit 1; }
 rm -rf "$ctx_tmp"
 
+echo '--- Plugin versions'
+# lazy.nvim reads and writes the repo's lazy-lock.json, not a copy in the installed config, and
+# install.sh's restore left the committed lock as it is.
+lockfile=$(nvim --headless -c 'lua io.stdout:write(require("lazy.core.config").options.lockfile)' +qa </dev/null)
+echo "lazy.nvim lockfile: $lockfile"
+[[ "$lockfile" == "$repo/config/nvim/lazy-lock.json" ]] ||
+  { echo 'lazy.nvim does not use the repo lazy-lock.json.' >&2; exit 1; }
+[[ ! -e "$config_home/nvim/lazy-lock.json" ]] ||
+  { echo 'The installed Neovim config still has its own lazy-lock.json.' >&2; exit 1; }
+git -C "$repo" diff --exit-code -- config/nvim/lazy-lock.json ||
+  { echo 'install.sh changed lazy-lock.json; commit the new plugin versions.' >&2; exit 1; }
+
 echo '--- Rust language server'
 # rustup's rust-analyzer component runs (without it, rustup's shim on PATH only errors), and
-# opening a .rs file in a cargo project with the full repo Neovim config, plugins restored
-# from lazy-lock.json, starts rust-analyzer through rustaceanvim (LazyVim's Rust extra).
+# opening a .rs file in a cargo project with the full repo Neovim config (plugins restored by
+# install.sh) starts rust-analyzer through rustaceanvim (LazyVim's Rust extra).
 rust-analyzer --version
 rust_tmp=$(mktemp -d)
 cargo new --quiet --vcs none --name ra_check "$rust_tmp/proj"
-nvim --headless '+Lazy! restore' +qa </dev/null
 [[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy/rustaceanvim" ]] ||
   { echo 'rustaceanvim was not installed by lazy.nvim.' >&2; exit 1; }
 cat > "$rust_tmp/check.lua" <<'LUA'
