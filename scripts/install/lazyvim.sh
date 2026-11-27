@@ -19,7 +19,14 @@ rm -rf -- "$config"
 mv "$_dotfiles_stage_dir/nvim" "$config"
 ok "replaced $(short_path "$config")"
 
-# Install missing plugins and move every plugin to the version in lazy-lock.json.
+# Install missing plugins and move every plugin to the version in lazy-lock.json. On a fresh
+# install lazy.nvim rewrites the lock while it installs LazyVim, before reading it, so the first
+# start runs with a saved copy put back afterwards, and the restore reads the repo's versions.
 step 'Neovim plugins'
+lock="$source_config/lazy-lock.json"
+[[ -f "$lock" ]] || die "Missing $(short_path "$lock")"
+cp -p -- "$lock" "$_dotfiles_stage_dir/lazy-lock.json"
+run nvim --headless +qa </dev/null
+cp -p -- "$_dotfiles_stage_dir/lazy-lock.json" "$lock"
 run nvim --headless '+Lazy! restore' +qa </dev/null
 ok 'at the versions in lazy-lock.json'

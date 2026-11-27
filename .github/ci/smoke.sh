@@ -165,22 +165,6 @@ NVIM_CONFIG="$config_home/nvim" \
 rm -rf "$ctx_tmp"
 
 echo '--- Plugin versions'
-# DEBUG (temporary)
-git -C "$repo" diff --stat -- config/nvim/lazy-lock.json || true
-git -C "$repo" checkout -- config/nvim/lazy-lock.json
-d="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy/gitsigns.nvim"
-cat > /tmp/dbg.lua <<'LUA'
-local L = require("lazy.manage.lock")
-local C = require("lazy.core.config")
-print("lockfile=" .. tostring(C.options.lockfile))
-print("lock gitsigns=" .. vim.inspect(L.get(C.plugins["gitsigns.nvim"])))
-print("plugin name=" .. tostring(C.plugins["gitsigns.nvim"] and C.plugins["gitsigns.nvim"].name))
-LUA
-nvim --headless -c 'luafile /tmp/dbg.lua' -c 'Lazy! restore' -c 'luafile /tmp/dbg.lua' -c 'messages' +qa </dev/null 2>&1 | tail -40 || true
-echo "== reflog after restore"; git -C "$d" reflog -5 || true
-git -C "$d" checkout 1e9d0fbfe7ff848bc402d2c2e2854fb4eff2dce7 2>&1 | tail -3 || true
-git -C "$repo" diff --stat -- config/nvim/lazy-lock.json || true
-git -C "$repo" checkout -- config/nvim/lazy-lock.json
 # lazy.nvim reads and writes the repo's lazy-lock.json, not a copy in the installed config, and
 # install.sh's restore left the committed lock as it is.
 lockfile=$(nvim --headless -c 'lua io.stdout:write(require("lazy.core.config").options.lockfile)' +qa </dev/null)
