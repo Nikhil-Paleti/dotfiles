@@ -4,6 +4,7 @@
 #   step NAME        start a step (a "· NAME …" line on a terminal)
 #   ok [DETAIL]      ✓ NAME (DETAIL)
 #   skip REASON      – NAME skipped (REASON)
+#   fail REASON      ✗ NAME (REASON) on stderr; the run goes on
 #   note TEXT...     a line you should read, always shown
 #   warn TEXT...     a problem you should fix, always shown (stderr)
 #   detail TEXT...   shown only with --verbose
@@ -30,6 +31,7 @@ step() {
 }
 ok() { _dotfiles_clear; printf '✓ %s%s\n' "$_dotfiles_step" "${1:+ ($1)}"; _dotfiles_step=''; }
 skip() { _dotfiles_clear; printf '– %s skipped (%s)\n' "$_dotfiles_step" "$1"; _dotfiles_step=''; }
+fail() { _dotfiles_clear; printf '✗ %s (%s)\n' "$_dotfiles_step" "$1" >&2; _dotfiles_step=''; }
 note() { _dotfiles_clear; printf '  %s\n' "$@"; }
 warn() { _dotfiles_clear; printf '! %s\n' "$1" >&2; shift; [[ $# -eq 0 ]] || printf '  %s\n' "$@" >&2; }
 detail() { if verbose; then _dotfiles_clear; printf '  %s\n' "$@"; fi; }
@@ -42,10 +44,6 @@ run() {
   return "$status"
 }
 run_live() { _dotfiles_clear; "$@"; }
-# keyboard.sh still uses these; they map onto step and ok.
-block_start() { step "$1"; _dotfiles_clear; }
-block_end() { ok; }
-
 # Put Homebrew on PATH for this run if it is installed but not loaded.
 load_brew() {
   have brew && return
