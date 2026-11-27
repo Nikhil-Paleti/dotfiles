@@ -15,10 +15,24 @@ bash ~/dotfiles/install.sh
 Then open a new terminal. On a new machine, run `atuin import auto` to bring
 in your shell history.
 
+## The dot command
+
+The installer links `dot` into `~/.local/bin`, so it works from any folder.
+
+```sh
+dot update                  # pull this repo and rerun the installer
+dot kb status               # is the keyboard layer running? (also start, stop)
+dot doctor                  # check every piece and say what's broken
+dot version                 # version here and the last installs
+```
+
+`dot kb` asks launchd on the Mac, or Windows from WSL, what's running now.
+`dot kb stop` lasts until `dot kb start` or the next restart (Windows: login).
+
 ## Update
 
 ```sh
-bash ~/dotfiles/install.sh
+dot update                  # or: bash ~/dotfiles/install.sh
 ```
 
 The same command pulls this repo (skipped if you have local changes),
@@ -37,7 +51,7 @@ Every commit on main that passes CI gets a dated version, like
 that lists what changed.
 
 ```sh
-bash ~/dotfiles/install.sh --version   # version here and the last installs
+dot version   # or: bash ~/dotfiles/install.sh --version
 ```
 
 If a change breaks something, revert it on main and run `install.sh` again.
@@ -107,6 +121,7 @@ The key map and Mac and Windows setup are in
 - **Icons show as boxes:** use a [Nerd Font][nerdfont] in your terminal. On
   Windows Terminal, set it for the WSL profile under
   [Appearance > Font face][wt-font].
+- **Something stopped working:** run `dot doctor`; each ✗ line says what to do.
 - **A step failed:** fix what it reports and rerun. `--verbose` shows the full
   output.
 

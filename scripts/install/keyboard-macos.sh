@@ -11,16 +11,10 @@ case "$(uname -m)" in
   arm64) kanata_arch=arm64; kanata_zip_sha256=839769d189911b5881e11550eaa2039705213fb725865d088f5a2e3a6c10de32 ;;
   *) kanata_arch=x64; kanata_zip_sha256=bdb8b2f7ae2a648336a2561c7c6c00a736cd76e012035df651114b304c5ffb01 ;;
 esac
-kanata_bin=/usr/local/bin/kanata
-kanata_dir="${XDG_CONFIG_HOME:-$HOME/.config}/kanata"
-kanata_cfg="$kanata_dir/kanata.kbd"
-# Keyboards Kanata grabs, one per line as `kanata --list` prints them; empty means all.
-kanata_names="$kanata_dir/macos-keyboards.txt"
-kanata_log=/var/log/kanata.log
+# Paths, kb_loaded and kanata_running are shared with `dot kb`.
+source "$DOTFILES_ROOT/scripts/lib/kanata.sh"
 vhid_root='/Library/Application Support/org.pqrs/Karabiner-DriverKit-VirtualHIDDevice'
 vhid_manager=/Applications/.Karabiner-VirtualHIDDevice-Manager.app/Contents/MacOS/Karabiner-VirtualHIDDevice-Manager
-vhid_plist=/Library/LaunchDaemons/org.pqrs.Karabiner-VirtualHIDDevice-Daemon.plist
-kanata_plist=/Library/LaunchDaemons/dev.kanata.kanata.plist
 kb_tmp="$_dotfiles_download_dir/keyboard"
 mkdir -p "$kb_tmp" "$kanata_dir"
 verify_sha256() { # file, expected
@@ -51,9 +45,6 @@ kb_sudo() {
   fi
   sudo "$@"
 }
-# Whether launchd has the system service $1 loaded: a matching plist on disk doesn't mean it
-# is (a manual `launchctl bootout` leaves the file behind).
-kb_loaded() { launchctl print "system/$1" >/dev/null 2>&1; }
 # The repo config with the names from $kanata_names in place of its marker line.
 kanata_render() {
   local names='' line
@@ -114,8 +105,6 @@ kanata_wait_outcome() {
     sleep 1
   done
 }
-# Whether Kanata is running right now (launchd's view, not the log).
-kanata_running() { launchctl print system/dev.kanata.kanata 2>/dev/null | grep -qE '^[[:space:]]*state = running'; }
 # Restart Kanata, loading its service first if launchd doesn't have it, and judge only the
 # log lines this start writes.
 kanata_restart() {
@@ -255,7 +244,7 @@ else
       kanata_restart
     fi
   fi
-  kanata_grabs=$(grep -vE '^(#|$)' "$kanata_names" | paste -sd ',' - | sed 's/,/, /g' || true)
+  kanata_grabs=$(kanata_grabs)
   case "$kanata_state" in
     ok) ok "running on ${kanata_grabs:-every keyboard}" ;;
     waiting) ok "running; plug in $kanata_grabs to start the layer" ;;

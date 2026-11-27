@@ -39,6 +39,7 @@ source "$DOTFILES_ROOT/scripts/install/rust.sh"
 source "$DOTFILES_ROOT/scripts/install/scout.sh"
 install_tools 'Formatters and linters' "${format_tools[@]}"
 source "$DOTFILES_ROOT/scripts/install/shell.sh"
+source "$DOTFILES_ROOT/scripts/install/dot.sh"
 source "$DOTFILES_ROOT/scripts/install/keyboard.sh"
 source "$DOTFILES_ROOT/scripts/install/lazyvim.sh"
 

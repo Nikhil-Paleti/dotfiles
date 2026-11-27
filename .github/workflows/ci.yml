@@ -23,7 +23,7 @@ jobs:
         # Settings come from .shellcheckrc. -x lets install.sh follow the modules it sources.
         run: |
           shellcheck --version
-          git ls-files -z '*.sh' | xargs -0 shellcheck -x
+          git ls-files -z '*.sh' bin/dot | xargs -0 shellcheck -x
       - name: Kanata config parses
         # The same Kanata release install.sh pins on the Mac (and winget ships on Windows).
         run: |
