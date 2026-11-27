@@ -101,35 +101,9 @@ bash or zsh extras follow your login shell.
 - **Clipboard:** yanks go to your terminal's clipboard over OSC 52, also over
   SSH. To paste from the system clipboard, use the terminal's paste key
   (Cmd+V on the Mac).
-
-### Keys
-
-| Key                        | Does                                         |
-| -------------------------- | -------------------------------------------- |
-| `Space h`                  | Start screen                                 |
-| `Space e` / `Space E`      | File explorer popup (repo root / cwd)        |
-| `Space Space`, `Space f f` | Find files                                   |
-| `Space /`                  | Search text in the repo                      |
-| `Space s g`, `Space s w`   | Search text / word under cursor              |
-| `Space s .`                | Search the current file's folder             |
-| `Space s y`                | Definitions of the word under the cursor     |
-| `Space s x`                | Callers of the word under the cursor         |
-| `Space c f`                | Format the file                              |
-| `Space g v o`              | Diffview: open (`c` close, `h` file history) |
-| `p`                        | Paste Neovim's last yank, instantly          |
-
-Inside the file explorer:
-
-| Key       | Does                                                  |
-| --------- | ----------------------------------------------------- |
-| `a`       | Add a file (end the name with `/` for a folder)       |
-| `r`       | Rename                                                |
-| `d`       | Delete                                                |
-| `/`       | Filter by name                                        |
-| `Space /` | Search inside the highlighted folder                  |
-
-The explorer closes when you open a file. Folder names stay pinned at the top
-while you scroll through them.
+- **File explorer:** `Space e` opens it as a popup with a preview. It closes
+  when you open a file, and folder names stay pinned at the top while you
+  scroll through them.
 
 ### Code search with scout
 
@@ -137,11 +111,11 @@ while you scroll through them.
 
 - Opening Neovim in a git repo indexes it in the background, and so does
   `:cd` into another repo. `$HOME` and folders outside git are skipped.
-- Once a repo is indexed, the search and find-file keys above use scout.
+- Once a repo is indexed, LazyVim's search and find-file keys use scout.
   Before that, they use the Snacks picker.
 - Queries use Google Code Search syntax: `file:`, `lang:`, `OR`, `-term`.
   `scout --help` lists them all.
-- Callers (`Space s x`) are matched by name, so same-named functions mix.
+- Callers are matched by name, so same-named functions mix.
 - `scout` also works in the terminal.
 - Indexes live in `~/.cache/scout`, on this machine only.
 
@@ -156,16 +130,6 @@ Run `gh auth status` once, and `gh auth login` if needed. Then use
 `:Octo pr list` and `:checkhealth octo`.
 
 ## Shell
-
-| Key or command | Does                                                       |
-| -------------- | ---------------------------------------------------------- |
-| `Ctrl+R`       | Search all history, full screen                            |
-| `Ctrl+R` again | Narrow to this machine, session, folder or repo            |
-| `Up`           | Search this terminal's history                             |
-| `→`            | Accept the suggestion as you type                          |
-| `Tab`          | Completion menu                                            |
-| `z gpu`        | Jump to the best match, like `~/projects/gpu-programming`  |
-| `zi`           | Pick a folder with fzf                                     |
 
 - **History:** [Atuin][atuin], local only: no account, no sync, no update
   check. Settings are in [config/atuin/config.toml](config/atuin/config.toml).
