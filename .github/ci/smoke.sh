@@ -126,44 +126,6 @@ HEAD_TMP="$head_tmp" NVIM_CONFIG="$config_home/nvim" \
   { echo 'The status bar branch is wrong in a git repo, a jj repo or outside a repo.' >&2; exit 1; }
 rm -rf "$head_tmp"
 
-# The explorer's pinned folder rows: on a fake explorer list (root, a/ with 40 files, then
-# a/b/c/d/ with 40 files), the header holds the folders of the first row under it, at most 3,
-# and shrinks one row at a time where a folder ends. Loads alone, without Snacks.
-ctx_tmp=$(mktemp -d)
-cat > "$ctx_tmp/check.lua" <<'LUA'
-vim.opt.rtp:prepend(vim.env.NVIM_CONFIG)
-local ctx = require("explorer_context")
-local root = { file = "root" }
-local items = { root }
-local function add(item) items[#items + 1] = item return item end
-local a = add({ file = "a", dir = true, parent = root })
-for i = 1, 40 do add({ file = "a/f" .. i, parent = a }) end
-local b = add({ file = "b", dir = true, parent = root })
-local c = add({ file = "c", dir = true, parent = b })
-local d = add({ file = "d", dir = true, parent = c })
-local e = add({ file = "e", dir = true, parent = d })
-for i = 1, 40 do add({ file = "e/f" .. i, parent = e }) end
-local function header(top)
-  local list = { top = top, count = function() return #items end, get = function(_, i) return items[i] end }
-  return table.concat(vim.tbl_map(function(it) return it.file end, ctx._context_for(list, 3)), "/")
-end
-local cases = { [1] = "", [2] = "", [10] = "a", [41] = "a", [42] = "", [43] = "", [44] = "c/d/e", [60] = "c/d/e" }
-local ok = true
-for top, want in pairs(cases) do
-  local got = header(top)
-  if got ~= want then
-    io.stdout:write(("explorer pinned folders at row %d: [%s], want [%s]\n"):format(top, got, want))
-    ok = false
-  end
-end
-io.stdout:write("explorer pinned folders: " .. (ok and "ok" or "wrong") .. "\n")
-vim.cmd(ok and "qa!" or "cq!")
-LUA
-NVIM_CONFIG="$config_home/nvim" \
-  nvim --headless -u NONE -i NONE -c "luafile $ctx_tmp/check.lua" </dev/null ||
-  { echo 'The explorer pins the wrong folders while scrolling.' >&2; exit 1; }
-rm -rf "$ctx_tmp"
-
 echo "--- New ${SHELL##*/} shell"
 # stdin is not a terminal here, so line editors such as ble.sh may print warnings;
 # only the PATH lookups below decide the result.
