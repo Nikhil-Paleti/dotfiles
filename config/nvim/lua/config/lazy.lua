@@ -14,6 +14,15 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+-- Plugin versions live in the repo's lazy-lock.json, not in this installed copy (install.sh
+-- replaces it). :Lazy update then shows up as a diff to commit, and install.sh restores the
+-- same versions on every machine. lua/dotfiles_root.lua is written by install.sh.
+local ok, dotfiles_root = pcall(require, "dotfiles_root")
+local lockfile = nil
+if ok and type(dotfiles_root) == "string" and (vim.uv or vim.loop).fs_stat(dotfiles_root .. "/config/nvim") then
+  lockfile = dotfiles_root .. "/config/nvim/lazy-lock.json"
+end
+
 require("lazy").setup({
   spec = {
     { "LazyVim/LazyVim", import = "lazyvim.plugins" },
@@ -23,6 +32,7 @@ require("lazy").setup({
     lazy = false,
     version = false, -- latest commit; many plugins' tagged releases are stale
   },
+  lockfile = lockfile,
   install = { colorscheme = { "tokyonight", "habamax" } },
   -- No plugin here needs luarocks; this silences the health warning about it.
   rocks = { enabled = false },

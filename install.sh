@@ -32,7 +32,6 @@ source "$DOTFILES_ROOT/scripts/install/scout.sh"
 install_tools 'Formatters and linters' tree-sitter stylua shfmt shellcheck ruff
 source "$DOTFILES_ROOT/scripts/install/shell.sh"
 source "$DOTFILES_ROOT/scripts/install/keyboard.sh"
-lazy_dir="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy"
 source "$DOTFILES_ROOT/scripts/install/lazyvim.sh"
 
 printf '\nDone in %ss.\n' "$SECONDS"
@@ -42,4 +41,3 @@ if [[ ${#dotfiles_rc_changes[@]} -gt 0 ]]; then
 fi
 # shellcheck disable=SC2016 # prints the command for the user to run
 [[ "$brew_new" != true ]] || printf 'Or load Homebrew in this one: eval "$("%s" shellenv)"\n' "$(command -v brew)"
-[[ -d "$lazy_dir" ]] || echo 'Start nvim once to install its plugins, then run :LazyHealth.'
