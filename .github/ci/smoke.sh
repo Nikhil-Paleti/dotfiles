@@ -165,6 +165,11 @@ NVIM_CONFIG="$config_home/nvim" \
 rm -rf "$ctx_tmp"
 
 echo '--- Plugin versions'
+# DEBUG (temporary)
+for p in gitsigns.nvim mini.ai friendly-snippets flash.nvim; do
+  d="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy/$p"
+  echo "== $p"; git -C "$d" reflog -8 || true; git -C "$d" status --short | head -5 || true
+done
 # lazy.nvim reads and writes the repo's lazy-lock.json, not a copy in the installed config, and
 # install.sh's restore left the committed lock as it is.
 lockfile=$(nvim --headless -c 'lua io.stdout:write(require("lazy.core.config").options.lockfile)' +qa </dev/null)
