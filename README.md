@@ -71,7 +71,8 @@ The left half of the split spacebar must send Scroll Lock: set that in Armoury C
 
 ```powershell
 winget install jtroo.kanata_gui
-$kanata = "$env:LOCALAPPDATA\Microsoft\WinGet\Links\kanata_windows_gui_winIOv2_x64.exe"
+# Open a new PowerShell window first: winget's PATH change only reaches new shells.
+$kanata = (Get-Command kanata_windows_gui_winIOv2_x64.exe).Source
 $link = (New-Object -ComObject WScript.Shell).CreateShortcut("$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\Kanata.lnk")
 $link.TargetPath = $kanata; $link.Arguments = "--cfg `"$env:APPDATA\kanata\kanata.kbd`""; $link.Save()
 Start-Process $kanata -ArgumentList "--cfg", "`"$env:APPDATA\kanata\kanata.kbd`""
