@@ -43,6 +43,24 @@ else
 fi
 have cargo || { echo 'cargo is not on PATH after the rustup install; check rustup show, then rerun.' >&2; exit 1; }
 echo "Using $(cargo --version) at $(command -v cargo)."
+# rust-analyzer, the Rust language server that Neovim's Rust extra (rustaceanvim) runs from
+# PATH. rustup ships it as a component of the default toolchain (adding it again is a no-op,
+# and rustup update keeps it current). Without the component, rustup's rust-analyzer shim is
+# still on PATH but only prints an error, so Neovim would find it and fail to start it.
+if have rustup; then
+  rust_toolchain=$(rustup default)
+  rust_toolchain=${rust_toolchain%% *}
+  rustup component add rust-analyzer --toolchain "$rust_toolchain" ||
+    echo "Could not add rust-analyzer to $rust_toolchain; Neovim's Rust support needs it." >&2
+fi
+if rust_analyzer_version=$(rust-analyzer --version 2>/dev/null); then
+  echo "Using $rust_analyzer_version at $(command -v rust-analyzer)."
+elif have rustup; then
+  echo 'rust-analyzer does not run; check rustup component list --installed, then rerun.' >&2
+else
+  echo 'rust-analyzer is not installed. Neovim needs it for Rust files: install it with the' >&2
+  echo 'package manager that installed Rust (Homebrew: brew install rust-analyzer).' >&2
+fi
 block_end Rust
 ##### end Rust install #####
 
