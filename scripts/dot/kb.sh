@@ -29,7 +29,7 @@ dot_kb() {
 
 # One line on Kanata as launchd sees it now; returns 0 only when it's running.
 kb_mac_report() {
-  local pid code grabs
+  local pid code
   if [[ ! -f "$kanata_plist" ]]; then
     echo 'Kanata is not set up on this Mac. Run dot update in a terminal.'
     return 1
@@ -40,8 +40,7 @@ kb_mac_report() {
   fi
   if kanata_running; then
     pid=$(kb_field "$kanata_label" pid)
-    grabs=$(kanata_grabs)
-    echo "Kanata is running (pid $pid) on ${grabs:-every keyboard}."
+    echo "Kanata is running (pid $pid) on every keyboard."
     if ! kb_loaded "$vhid_label"; then
       echo "! The Karabiner driver daemon is not loaded, so keys won't reach macOS. Run dot kb start." >&2
     fi

@@ -20,10 +20,10 @@ z x c v b   n m , . /   ->   } ) ] > +   _ - & | \
 - The left half of the split spacebar must send Scroll Lock. Set that in
   Armoury Crate and save it to the keyboard's onboard profile, so the Mac sees
   it too. To use another key, change `slck` on the first line of `defsrc`.
-- On Windows the layer works on any keyboard. On the Mac it works on the ROG
-  keyboard, where Alt and Command are also swapped, and on the built-in
-  keyboard. The built-in keyboard has one spacebar, so there only Caps Lock
-  opens the layer; Space, Alt and Command are unchanged.
+- On Windows the layer works on any keyboard. On the Mac it works on every
+  keyboard, and Alt and Command are swapped on all but the built-in one. The
+  built-in keyboard has one spacebar, so there only Caps Lock opens the layer;
+  Space, Option and Command are unchanged.
 
 ## Mac
 
@@ -35,11 +35,10 @@ z x c v b   n m , . /   ->   } ) ] > +   _ - & | \
    Accessibility.
 3. It restarts Kanata and says whether it works. If not, run it again.
 
-- Kanata grabs only the keyboards listed in
-  `~/.config/kanata/macos-keyboards.txt`. The installer adds the built-in
-  keyboard and the ROG/ASUS keyboards it sees, and a listed keyboard plugged
-  in later is picked up.
-- `dot kb stop` gives plain Caps Lock back on both keyboards.
+- Kanata grabs every keyboard plugged in when it starts, and grabs them again
+  after a replug. A keyboard it hasn't seen needs `dot kb stop`, then
+  `dot kb start`.
+- `dot kb stop` gives plain Caps Lock back on every keyboard.
 - Skipped if Karabiner-Elements is installed, since the two can't run together.
 - Setup follows
   [Kanata's macOS guide](https://github.com/jtroo/kanata/blob/v1.12.0/docs/setup-macos.md).

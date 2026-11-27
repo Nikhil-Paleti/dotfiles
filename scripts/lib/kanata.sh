@@ -5,8 +5,6 @@ kanata_label=dev.kanata.kanata
 kanata_bin=/usr/local/bin/kanata
 kanata_dir="${XDG_CONFIG_HOME:-$HOME/.config}/kanata"
 kanata_cfg="$kanata_dir/kanata.kbd"
-# Keyboards Kanata grabs on the Mac, one per line as `kanata --list` prints them; empty means all.
-kanata_names="$kanata_dir/macos-keyboards.txt"
 kanata_log=/var/log/kanata.log
 kanata_plist=/Library/LaunchDaemons/dev.kanata.kanata.plist
 vhid_label=org.pqrs.Karabiner-VirtualHIDDevice-Daemon
@@ -24,8 +22,6 @@ kb_field() {
 kanata_running() { [[ "$(kb_field "$kanata_label" state)" == running ]]; }
 # Whether launchd has the service switched off, so a bootstrap of it fails.
 kb_disabled() { launchctl print-disabled system 2>/dev/null | grep -Eq "\"$1\" => (true|disabled)"; }
-# The keyboards Kanata grabs on the Mac, comma separated; empty means every keyboard.
-kanata_grabs() { grep -vE '^(#|$)' "$kanata_names" 2>/dev/null | paste -sd ',' - | sed 's/,/, /g' || true; }
 
 # WSL: Windows runs Kanata. cmd.exe runs from its own (Windows) folder, since it warns about
 # a WSL working directory.

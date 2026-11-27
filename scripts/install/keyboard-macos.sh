@@ -45,32 +45,11 @@ kb_sudo() {
   fi
   sudo "$@"
 }
-# The repo config with the names from $kanata_names in place of its marker line.
-kanata_render() {
-  local names='' line
-  if [[ -f "$kanata_names" ]]; then
-    while IFS= read -r line || [[ -n "$line" ]]; do
-      [[ -n "$line" && "$line" != \#* ]] || continue
-      if [[ "$line" == *'"'* ]]; then warn "Skipping keyboard name with a quote in $kanata_names: $line"; continue; fi
-      names+=" \"$line\""
-    done <"$kanata_names"
-  fi
-  if [[ -n "$names" ]]; then
-    KB_NAMES="${names# }" awk '/;; @macos-keyboards@/ {
-      print "  macos-dev-names-include (" ENVIRON["KB_NAMES"] ")"
-      print "  macos-continue-if-no-devs-found yes"
-      next
-    } { print }' "$kanata_src"
-  else
-    cat "$kanata_src"
-  fi
-}
-# kanata (a root daemon) reads the rendered config from $kanata_cfg.
+# kanata (a root daemon) reads the repo config copied to $kanata_cfg.
 kanata_cfg_changed=false
 kanata_apply_config() {
-  kanata_render >"$kb_tmp/kanata.kbd"
-  if ! cmp -s "$kb_tmp/kanata.kbd" "$kanata_cfg"; then
-    cp "$kb_tmp/kanata.kbd" "$kanata_cfg"
+  if ! cmp -s "$kanata_src" "$kanata_cfg"; then
+    cp "$kanata_src" "$kanata_cfg"
     kanata_cfg_changed=true
   fi
   detail "Kanata config applied: $kanata_cfg"
@@ -171,15 +150,11 @@ else
     kb_sudo install -m 755 -o root -g wheel "$kb_tmp/kanata" "$kanata_bin"
     kanata_bin_changed=true
   fi
-  # 4. The built-in keyboard and any ROG/ASUS keyboard plugged in now join the list. Only
-  # listed keyboards are picked up when plugged in after Kanata starts (see the config).
-  [[ -f "$kanata_names" ]] || echo '# Keyboards Kanata grabs, one name per line, as kanata --list prints them.' >"$kanata_names"
-  while IFS= read -r kb_name; do
-    [[ -n "$kb_name" ]] || continue
-    grep -qxF -- "$kb_name" "$kanata_names" || { printf '%s\n' "$kb_name" >>"$kanata_names"; note "Kanata will grab this keyboard: $kb_name ($(short_path "$kanata_names"))"; }
-  done < <({ "$kanata_bin" --list 2>/dev/null || sudo -n "$kanata_bin" --list 2>/dev/null; } | sed -nE 's/^0x[0-9A-Fa-f]+ +[0-9]+ +[0-9]+ +//p' | sed -E 's/[[:space:]]+$//' | grep -iE 'rog|asus|apple internal keyboard' | sort -u || true)
-  grep -qvE '^(#|$)' "$kanata_names" || detail 'No keyboard found to list, so Kanata grabs every keyboard. Plug the ROG keyboard in and rerun to list it.'
-  grep -qiE 'rog|asus' "$kanata_names" || detail 'No ROG/ASUS keyboard listed yet. Plug it in and rerun so Kanata grabs it too.'
+  # 4. The config. Kanata grabs every keyboard; the old list of keyboards to grab is gone.
+  if [[ -f "$kanata_dir/macos-keyboards.txt" ]]; then
+    rm -f "$kanata_dir/macos-keyboards.txt"
+    detail 'Removed macos-keyboards.txt: Kanata grabs every keyboard now.'
+  fi
   kanata_apply_config
   "$kanata_bin" --check -c "$kanata_cfg" >/dev/null || die "Kanata rejected $kanata_cfg; fix it, then rerun."
   # 5. kanata itself, as root at boot (it must be root to reach the driver).
@@ -239,10 +214,9 @@ else
       kanata_restart
     fi
   fi
-  kanata_grabs=$(kanata_grabs)
   case "$kanata_state" in
-    ok) ok "running on ${kanata_grabs:-every keyboard}" ;;
-    waiting) ok "running; plug in $kanata_grabs to start the layer" ;;
+    ok) ok 'running on every keyboard' ;;
+    waiting) ok 'running; plug in a keyboard to start the layer' ;;
     input-monitoring) fail 'Kanata lacks Input Monitoring' ;;
     accessibility) fail 'Kanata lacks Accessibility' ;;
     driver) fail 'the Karabiner driver is not switched on (Driver Extensions)' ;;
