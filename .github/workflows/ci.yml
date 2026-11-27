@@ -37,6 +37,12 @@ jobs:
             config/kanata/kanata.kbd > "$RUNNER_TEMP/kanata-mac.kbd"
           grep -q 'macos-dev-names-include' "$RUNNER_TEMP/kanata-mac.kbd"
           "$RUNNER_TEMP/kanata" --check -c "$RUNNER_TEMP/kanata-mac.kbd"
+          # The macOS-only blocks (built-in keyboard, Alt/Command swap), which a Linux check
+          # skips: parsed here as if they were for Linux.
+          sed -e 's/(platform (macos)/(platform (linux)/' -e 's/(platform (win winiov2 wintercept linux)/(platform (win)/' \
+            "$RUNNER_TEMP/kanata-mac.kbd" > "$RUNNER_TEMP/kanata-mac-blocks.kbd"
+          grep -q 'definputdevices' "$RUNNER_TEMP/kanata-mac-blocks.kbd"
+          "$RUNNER_TEMP/kanata" --check -c "$RUNNER_TEMP/kanata-mac-blocks.kbd"
 
   install:
     name: install (${{ matrix.os }}, ${{ matrix.shell }})

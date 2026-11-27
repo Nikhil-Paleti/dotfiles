@@ -111,7 +111,7 @@ to `~/.bashrc` or `~/.zshrc` once, and your default shell stays as it is.
 ## Keyboard layer
 
 Hold left space or Caps Lock for numbers, brackets and arrows on the home row.
-The key map and Mac and Windows setup are in
+On the Mac's built-in keyboard it's Caps Lock only. The key map and Mac and Windows setup are in
 [config/kanata/README.md](config/kanata/README.md).
 
 ## Troubleshooting
