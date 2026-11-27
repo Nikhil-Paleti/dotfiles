@@ -56,6 +56,11 @@ kanata_apply_config() {
 }
 kanata_read_log() { if [[ -r "$kanata_log" ]]; then cat "$kanata_log"; else sudo -n cat "$kanata_log" 2>/dev/null || true; fi; }
 kanata_log_lines() { kanata_read_log | wc -l | tr -d ' '; }
+# Whether the newest Kanata start found the built-in keyboard by name (its definputdevices
+# line), which is what keeps Option and Command as they are there.
+kanata_knows_builtin() {
+  kanata_read_log | awk '/kanata v[0-9.]+ starting/ { found = 0 } /definputdevices: device ID 1 matched/ { found = 1 } END { exit !found }'
+}
 # How the newest Kanata start after log line $1 went: ok, waiting (no listed keyboard is
 # plugged in), input-monitoring, accessibility, driver, grab-failed, pending or none.
 kanata_outcome() {
@@ -225,7 +230,12 @@ else
     *) fail "Kanata has not reported in; check $kanata_log" ;;
   esac
   case "$kanata_state" in
-    ok|waiting) ;;
+    ok|waiting)
+      if ! kanata_knows_builtin; then
+        warn "Kanata didn't recognise the built-in keyboard, so it swaps Option and Command there too." \
+          "Its log says why: $kanata_log"
+      fi
+      ;;
     grab-failed) warn 'Remove kanata (-) from Input Monitoring and Accessibility, then rerun bash install.sh in a terminal to add it back.' ;;
     none) warn 'Rerun bash install.sh in a terminal to start it.' ;;
     *) warn 'Rerun bash install.sh in a terminal; it walks you through each System Settings window.' ;;
