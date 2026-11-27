@@ -1,0 +1,62 @@
+;; Coding layer for Kanata, one file for macOS and Windows.
+;; Hold left space (or Caps Lock) for numbers, brackets and arrows; tap left space for Space
+;; and Caps Lock for Esc. Everything else on the keyboard is unchanged. The key map and setup
+;; steps are in the README ("Keyboard layer"). install.sh copies this file into place.
+
+;; ---- Settings you might change ----------------------------------------------------------
+;; Trigger keys: Kanata allows no variables in defsrc, so the two triggers are the first line
+;; of defsrc below. slck is the left half of the split spacebar, set to send Scroll Lock in
+;; Armoury Crate; caps is Caps Lock, so the layer also works on a laptop or any other keyboard.
+;; To use another key for left space (say f13 or f24), change slck there and nothing else.
+(defvar
+  ;; A trigger held this long (ms) is the layer, even with no other key pressed.
+  hold-ms 200
+  ;; Tap a trigger, then press it again within this many ms and hold: Space or Esc repeats.
+  repeat-ms 200
+  ;; If any key was pressed within this many ms before left space, it is a plain Space at once.
+  typing-ms 150
+)
+
+(defcfg
+  ;; Keys not listed in defsrc still pass through Kanata, so Shift and the rest reach the
+  ;; layer and count when Kanata decides between tap and hold.
+  process-unmapped-keys yes
+)
+
+;; Why two different tap-holds:
+;; - Left space uses tap-hold-release. When you type fast, Space and the next letter overlap
+;;   (space down, t down, space up). A press-style tap-hold would read that as the layer and
+;;   type the wrong thing. tap-hold-release switches to the layer only when another key is
+;;   pressed AND released while space is still down, or after hold-ms. require-prior-idle
+;;   makes space right after a letter a plain Space with no waiting at all.
+;; - Caps Lock uses tap-hold-press: nothing rolls through Caps Lock while typing, so the layer
+;;   starts on the first key pressed under it, with no waiting.
+(defalias
+  spc  (tap-hold-release $repeat-ms $hold-ms spc (layer-while-held code) (require-prior-idle $typing-ms))
+  caps (tap-hold-press $repeat-ms $hold-ms esc (layer-while-held code))
+)
+
+(defsrc
+  slck caps
+  q    w    e    r    t    y    u    i    o    p
+  a    s    d    f    g    h    j    k    l    ;
+  z    x    c    v    b    n    m    ,    .    /
+)
+
+(deflayer base
+  @spc @caps
+  _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _
+)
+
+;; The layer. Shift passes through, so Shift + layer + q is !, and Shift + arrows selects.
+;;   q w e r t y u i o p   ->  1 2 3 4 5 6 7 8 9 0
+;;   a s d f g h j k l ;   ->  { ( [ < = Left Down Up Right :
+;;   z x c v b n m , . /   ->  } ) ] > + _ - & | \
+(deflayer code
+  _    _
+  1    2    3    4    5    6    7    8    9    0
+  S-[  S-9  [    S-,  =    left down up   rght S-;
+  S-]  S-0  ]    S-.  S-=  S-min min  S-7  S-bksl bksl
+)
