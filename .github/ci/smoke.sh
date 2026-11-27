@@ -164,6 +164,34 @@ NVIM_CONFIG="$config_home/nvim" \
   { echo 'The explorer pins the wrong folders while scrolling.' >&2; exit 1; }
 rm -rf "$ctx_tmp"
 
+echo '--- Rust language server'
+# rustup's rust-analyzer component runs (without it, rustup's shim on PATH only errors), and
+# opening a .rs file in a cargo project with the full repo Neovim config, plugins restored
+# from lazy-lock.json, starts rust-analyzer through rustaceanvim (LazyVim's Rust extra).
+rust-analyzer --version
+rust_tmp=$(mktemp -d)
+cargo new --quiet --vcs none --name ra_check "$rust_tmp/proj"
+nvim --headless '+Lazy! restore' +qa </dev/null
+[[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy/rustaceanvim" ]] ||
+  { echo 'rustaceanvim was not installed by lazy.nvim.' >&2; exit 1; }
+cat > "$rust_tmp/check.lua" <<'LUA'
+local function client()
+  return vim.lsp.get_clients({ bufnr = 0, name = "rust-analyzer" })[1]
+end
+local ok = vim.wait(180000, function()
+  local c = client()
+  return c ~= nil and c.initialized == true
+end, 200)
+local c = client()
+io.stdout:write(("rust-analyzer in Neovim: filetype %s, attached %s, cmd %s\n"):format(
+  vim.bo.filetype, tostring(ok), c and table.concat(c.config.cmd, " ") or "none"))
+vim.cmd(ok and "qa!" or "cq!")
+LUA
+(cd "$rust_tmp/proj" &&
+  nvim --headless -i NONE -c "au VimEnter * ++once ++nested luafile $rust_tmp/check.lua" src/main.rs </dev/null) ||
+  { echo 'Opening a Rust file in Neovim did not start rust-analyzer.' >&2; exit 1; }
+rm -rf "$rust_tmp"
+
 echo "--- New ${SHELL##*/} shell"
 # stdin is not a terminal here, so line editors such as ble.sh may print warnings;
 # only the PATH lookups below decide the result.

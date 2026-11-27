@@ -63,5 +63,5 @@ jobs:
           echo 'Second run left startup files and configs unchanged.'
 
       - name: Smoke checks
-        timeout-minutes: 10
+        timeout-minutes: 20
         run: bash .github/ci/smoke.sh
