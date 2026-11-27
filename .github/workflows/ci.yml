@@ -37,12 +37,27 @@ jobs:
             config/kanata/kanata.kbd > "$RUNNER_TEMP/kanata-mac.kbd"
           grep -q 'macos-dev-names-include' "$RUNNER_TEMP/kanata-mac.kbd"
           "$RUNNER_TEMP/kanata" --check -c "$RUNNER_TEMP/kanata-mac.kbd"
-          # The macOS-only blocks (built-in keyboard, Alt/Command swap), which a Linux check
-          # skips: parsed here as if they were for Linux.
+          # The macOS-only block (Alt/Command swap), which a Linux check skips: parsed here as
+          # if it were for Linux.
           sed -e 's/(platform (macos)/(platform (linux)/' -e 's/(platform (win winiov2 wintercept linux)/(platform (win)/' \
             "$RUNNER_TEMP/kanata-mac.kbd" > "$RUNNER_TEMP/kanata-mac-blocks.kbd"
-          grep -q 'definputdevices' "$RUNNER_TEMP/kanata-mac-blocks.kbd"
+          grep -q '(platform (linux)' "$RUNNER_TEMP/kanata-mac-blocks.kbd"
           "$RUNNER_TEMP/kanata" --check -c "$RUNNER_TEMP/kanata-mac-blocks.kbd"
+          # The ROG config with no ROG keyboard listed: every keyboard but the built-in one.
+          sed 's|;; @macos-keyboards@|macos-dev-names-exclude ("Apple Internal Keyboard / Trackpad") macos-continue-if-no-devs-found yes|' \
+            config/kanata/kanata.kbd > "$RUNNER_TEMP/kanata-mac-exclude.kbd"
+          "$RUNNER_TEMP/kanata" --check -c "$RUNNER_TEMP/kanata-mac-exclude.kbd"
+          # The built-in keyboard's own config, bare and with its name filled in.
+          "$RUNNER_TEMP/kanata" --check -c config/kanata/builtin.kbd
+          sed 's|;; @macos-keyboards@|macos-dev-names-include ("Apple Internal Keyboard / Trackpad") macos-continue-if-no-devs-found yes|' \
+            config/kanata/builtin.kbd > "$RUNNER_TEMP/builtin-mac.kbd"
+          grep -q 'macos-dev-names-include' "$RUNNER_TEMP/builtin-mac.kbd"
+          "$RUNNER_TEMP/kanata" --check -c "$RUNNER_TEMP/builtin-mac.kbd"
+      - name: Both Kanata configs have the same layer
+        run: |
+          layer_rows() { awk '/^\(deflayer code/ { on = 1; next } on && /^\)/ { exit } on && !/^[ _]*$/ { print }' "$1"; }
+          diff <(layer_rows config/kanata/kanata.kbd) <(layer_rows config/kanata/builtin.kbd)
+          [[ "$(layer_rows config/kanata/builtin.kbd | wc -l)" -eq 3 ]]
 
   install:
     name: install (${{ matrix.os }}, ${{ matrix.shell }})

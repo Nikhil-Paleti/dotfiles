@@ -1,0 +1,45 @@
+;; Coding layer for the Mac's built-in keyboard, run by its own Kanata beside the ROG one.
+;; It has one spacebar, so only Caps Lock is a trigger: hold it for numbers, brackets and
+;; arrows, tap it for Esc. Space, Alt and Command are unchanged (no swap: the built-in
+;; keyboard already has Command next to the spacebar). The layer is the same as in
+;; kanata.kbd; CI checks that the two copies match. install.sh copies this file into place.
+
+(defvar
+  ;; Caps Lock held this long (ms) is the layer, even with no other key pressed.
+  hold-ms 200
+  ;; Tap Caps Lock, then press it again within this many ms and hold: Esc repeats.
+  repeat-ms 200
+)
+
+(defcfg
+  process-unmapped-keys yes
+  ;; install.sh replaces the next line with macos-dev-names-include ("<built-in keyboard>"),
+  ;; from ~/.config/kanata/macos-builtin-keyboards.txt. With no name it doesn't start this
+  ;; Kanata at all, since an empty list would grab every keyboard.
+  ;; @macos-keyboards@
+)
+
+(defalias
+  caps (tap-hold-press $repeat-ms $hold-ms esc (layer-while-held code))
+)
+
+(defsrc
+  caps
+  q    w    e    r    t    y    u    i    o    p
+  a    s    d    f    g    h    j    k    l    ;
+  z    x    c    v    b    n    m    ,    .    /
+)
+
+(deflayer base
+  @caps
+  _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _
+  _    _    _    _    _    _    _    _    _    _
+)
+
+(deflayer code
+  _
+  1    2    3    4    5    6    7    8    9    0
+  S-[  S-9  [    S-,  =    left down up   rght S-;
+  S-]  S-0  ]    S-.  S-=  S-min min  S-7  S-bksl bksl
+)

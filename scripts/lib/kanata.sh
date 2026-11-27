@@ -9,6 +9,13 @@ kanata_cfg="$kanata_dir/kanata.kbd"
 kanata_names="$kanata_dir/macos-keyboards.txt"
 kanata_log=/var/log/kanata.log
 kanata_plist=/Library/LaunchDaemons/dev.kanata.kanata.plist
+# The Mac's built-in keyboard runs a second Kanata with its own config (Caps Lock only, no
+# Alt/Command swap), so the two keyboards never share one config.
+kanata_builtin_label=dev.kanata.builtin
+kanata_builtin_cfg="$kanata_dir/builtin.kbd"
+kanata_builtin_names="$kanata_dir/macos-builtin-keyboards.txt"
+kanata_builtin_log=/var/log/kanata-builtin.log
+kanata_builtin_plist=/Library/LaunchDaemons/dev.kanata.builtin.plist
 vhid_label=org.pqrs.Karabiner-VirtualHIDDevice-Daemon
 vhid_plist=/Library/LaunchDaemons/org.pqrs.Karabiner-VirtualHIDDevice-Daemon.plist
 
@@ -20,12 +27,13 @@ kb_field() {
   launchctl print "system/$1" 2>/dev/null |
     awk -v key="$2" '{ sub(/^[[:space:]]+/, "") } index($0, key " = ") == 1 { print substr($0, length(key) + 4); exit }'
 }
-# Whether Kanata is running right now (launchd's view, not the log).
-kanata_running() { [[ "$(kb_field "$kanata_label" state)" == running ]]; }
+# Whether a Kanata is running right now (launchd's view, not the log); the ROG one by default.
+kanata_running() { [[ "$(kb_field "${1:-$kanata_label}" state)" == running ]]; }
 # Whether launchd has the service switched off, so a bootstrap of it fails.
 kb_disabled() { launchctl print-disabled system 2>/dev/null | grep -Eq "\"$1\" => (true|disabled)"; }
-# The keyboards Kanata grabs on the Mac, comma separated; empty means every keyboard.
-kanata_grabs() { grep -vE '^(#|$)' "$kanata_names" 2>/dev/null | paste -sd ',' - | sed 's/,/, /g' || true; }
+# The keyboards in a names file (the ROG one by default), comma separated; empty means every
+# keyboard.
+kanata_grabs() { grep -vE '^(#|$)' "${1:-$kanata_names}" 2>/dev/null | paste -sd ',' - | sed 's/,/, /g' || true; }
 
 # WSL: Windows runs Kanata. cmd.exe runs from its own (Windows) folder, since it warns about
 # a WSL working directory.

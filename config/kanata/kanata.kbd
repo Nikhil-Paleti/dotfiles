@@ -1,10 +1,9 @@
-;; Coding layer for Kanata, one file for macOS and Windows.
+;; Coding layer for Kanata, for the ROG keyboard on macOS and any keyboard on Windows.
 ;; Hold left space (or Caps Lock) for numbers, brackets and arrows; tap left space for Space
-;; and Caps Lock for Esc. On macOS, Alt and Command are also swapped on the ROG keyboard (see
-;; the end of the file). The Mac's built-in keyboard has one spacebar, which sends a plain
-;; spc and so passes through: there only Caps Lock opens the layer, and Alt and Command stay
-;; as they are. Everything else on the keyboard is unchanged. The key map and setup steps are
-;; in config/kanata/README.md. install.sh copies this file into place.
+;; and Caps Lock for Esc. On macOS, Alt and Command are also swapped (see the end of the
+;; file). Everything else on the keyboard is unchanged. The Mac's built-in keyboard runs its
+;; own Kanata with builtin.kbd (Caps Lock only, no swap). The key map and setup steps are in
+;; config/kanata/README.md. install.sh copies this file into place.
 
 ;; ---- Settings you might change ----------------------------------------------------------
 ;; Trigger keys: Kanata allows no variables in defsrc, so the two triggers are the first line
@@ -29,8 +28,8 @@
   ;; using the names in ~/.config/kanata/macos-keyboards.txt (it finds ROG/ASUS keyboards
   ;; with `kanata --list`). Kanata then grabs only those keyboards, waits for one that isn't
   ;; plugged in yet, and grabs it again after a replug. Kanata 1.12 never picks up a keyboard
-  ;; it wasn't told about once it has started. With no names, it grabs every keyboard. The
-  ;; Mac's built-in keyboard is on that list too, so Caps Lock works the same there.
+  ;; it wasn't told about once it has started. With no names, it grabs every keyboard except
+  ;; the built-in one (macos-dev-names-exclude), which builtin.kbd's Kanata has.
   ;; @macos-keyboards@
 )
 
@@ -78,21 +77,10 @@
 ;; Alt and Command. macOS's own Option/Command swap (System Settings > Keyboard > Modifier
 ;; Keys) no longer reaches a keyboard Kanata grabs: Kanata reads the keys before macOS does
 ;; and types through its own virtual keyboard. So on macOS the swap is done here, and the key
-;; next to the spacebar (Alt on the ROG keyboard) is Command. Keep the macOS swap too: it
-;; still applies whenever Kanata isn't running. Windows keeps Alt and Win as they are.
-;; The Mac's built-in keyboard already has Command next to the spacebar, so it keeps its own
-;; keys. Kanata knows it by name (definputdevices); any other keyboard gets the swap. Kanata
-;; names only the keyboards present when it starts, which the built-in one always is, so the
-;; ROG keyboard plugged in later still gets the swap.
-;; Device 1 is the built-in keyboard. One item per platform block, as Kanata requires.
-(platform (macos) (definputdevices 1 ((name "Apple Internal Keyboard"))))
+;; next to the spacebar (Alt on this keyboard) is Command. Keep the macOS swap too: it still
+;; applies whenever Kanata isn't running. Windows keeps Alt and Win as they are.
 (platform (macos)
-  (defalias
-    lalt (switch ((device-history 1 1)) lalt break () lmet break)
-    lmet (switch ((device-history 1 1)) lmet break () lalt break)
-    ralt (switch ((device-history 1 1)) ralt break () rmet break)
-    rmet (switch ((device-history 1 1)) rmet break () ralt break)
-  )
+  (defalias lalt lmet  lmet lalt  ralt rmet  rmet ralt)
 )
 (platform (win winiov2 wintercept linux)
   (defalias lalt lalt  lmet lmet  ralt ralt  rmet rmet)

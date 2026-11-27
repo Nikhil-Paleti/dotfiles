@@ -14,16 +14,17 @@ z x c v b   n m , . /   ->   } ) ] > +   _ - & | \
   selects.
 - A Space typed right after a letter is always a plain Space, so fast typing
   doesn't open the layer.
-- [Kanata](https://github.com/jtroo/kanata) runs one config,
-  [kanata.kbd](kanata.kbd), on the Mac and Windows. Timings are at the top.
+- [Kanata](https://github.com/jtroo/kanata) runs
+  [kanata.kbd](kanata.kbd) on the Mac and Windows. Timings are at the top.
   Linux machines you SSH into need nothing.
 - The left half of the split spacebar must send Scroll Lock. Set that in
   Armoury Crate and save it to the keyboard's onboard profile, so the Mac sees
   it too. To use another key, change `slck` on the first line of `defsrc`.
 - On Windows the layer works on any keyboard. On the Mac it works on the ROG
   keyboard, where Alt and Command are also swapped, and on the built-in
-  keyboard. The built-in keyboard has one spacebar, so there only Caps Lock
-  opens the layer; Space, Alt and Command are unchanged.
+  keyboard. The built-in keyboard runs its own Kanata with
+  [builtin.kbd](builtin.kbd): only Caps Lock opens the layer there, and
+  Space, Option and Command are unchanged.
 
 ## Mac
 
@@ -35,10 +36,11 @@ z x c v b   n m , . /   ->   } ) ] > +   _ - & | \
    Accessibility.
 3. It restarts Kanata and says whether it works. If not, run it again.
 
-- Kanata grabs only the keyboards listed in
-  `~/.config/kanata/macos-keyboards.txt`. The installer adds the built-in
-  keyboard and the ROG/ASUS keyboards it sees, and a listed keyboard plugged
-  in later is picked up.
+- The ROG Kanata grabs the keyboards listed in
+  `~/.config/kanata/macos-keyboards.txt`, never the built-in one. The
+  built-in keyboard's Kanata uses `~/.config/kanata/macos-builtin-keyboards.txt`.
+  The installer fills both with the keyboards it sees, and a listed keyboard
+  plugged in later is picked up.
 - `dot kb stop` gives plain Caps Lock back on both keyboards.
 - Skipped if Karabiner-Elements is installed, since the two can't run together.
 - Setup follows

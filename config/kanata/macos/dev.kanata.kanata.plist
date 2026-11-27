@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>Label</key><string>dev.kanata.kanata</string>
+  <key>Label</key><string>@KANATA_LABEL@</string>
   <key>ProgramArguments</key><array><string>@KANATA_BIN@</string><string>-c</string><string>@KANATA_CFG@</string></array>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
