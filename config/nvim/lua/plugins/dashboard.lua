@@ -54,15 +54,18 @@ local function scene_lines(cols, rows)
   return lines
 end
 
--- jj: the nearest bookmark at or below the working copy, then `jj st`.
--- git: the current branch, then the short status.
+-- jj: the nearest bookmark at or below the working copy (the same lookup as the status bar, in
+-- lua/repo_head.lua), then `jj st`. git: the current branch, then the short status.
+local head = require("repo_head")
+local bookmark_revset = vim.fn.shellescape(head.jj_bookmark_revset)
+local bookmark_template = vim.fn.shellescape(head.jj_bookmark_template)
 local repo_status_cmd = [[
 if jj root >/dev/null 2>&1; then
-  b=$(jj log --no-graph --no-pager --color never -r 'latest(::@ & bookmarks())' -T 'local_bookmarks.map(|b| b.name()).join(" ")' 2>/dev/null)
-  printf '\033[35m󰘬 %s\033[0m\n\n' "${b:-no bookmark}"
+  b=$(jj log --no-graph --no-pager --color never -r ]] .. bookmark_revset .. [[ -T ]] .. bookmark_template .. [[ 2>/dev/null)
+  printf '\033[35m]] .. head.jj_icon .. [[%s\033[0m\n\n' "${b:-no bookmark}"
   jj st --no-pager
 else
-  printf '\033[35m %s\033[0m\n\n' "$(git branch --show-current)"
+  printf '\033[35m]] .. head.git_icon .. [[%s\033[0m\n\n' "$(git branch --show-current)"
   git status --short --renames
 fi
 # Stay alive (quietly) so the terminal never prints "[Process exited 0]" under short output.
