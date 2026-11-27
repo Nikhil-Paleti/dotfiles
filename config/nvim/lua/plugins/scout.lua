@@ -4,13 +4,14 @@
 -- (Space Space, Space f f) stays on Snacks everywhere. Indexes live in ~/.cache/scout on this
 -- machine only; nothing is uploaded. :checkhealth scout shows the binary and index state.
 --
--- install.sh keeps a checkout of scout's main branch in ${XDG_DATA_HOME:-~/.local/share}/scout,
--- pulls it on every run, and builds the binary there. The plugin loads from that same folder,
--- so its Lua and the binary always come from one commit. lazy.nvim doesn't clone, update or
--- build it (and lazy-lock.json has no entry for it): rerun bash install.sh to update scout.
--- Before the first install.sh run the folder doesn't exist and the plugin is skipped.
-local data = vim.env.XDG_DATA_HOME
-local scout_dir = (data and data ~= "" and data or vim.fn.expand("~/.local/share")) .. "/scout"
+-- install.sh keeps a checkout of scout's main branch in the dotfiles folder's modules/scout
+-- (git-ignored), pulls it on every run, and builds the binary there. The plugin loads from that
+-- same folder, so its Lua and the binary always come from one commit. lazy.nvim doesn't clone,
+-- update or build it (and lazy-lock.json has no entry for it): rerun bash install.sh to update
+-- scout. install.sh writes lua/dotfiles_root.lua with the dotfiles path into the installed
+-- config; without it, or before the folder exists, the plugin is skipped.
+local ok, dotfiles_root = pcall(require, "dotfiles_root")
+local scout_dir = (ok and type(dotfiles_root) == "string" and dotfiles_root or "") .. "/modules/scout"
 
 return {
   {

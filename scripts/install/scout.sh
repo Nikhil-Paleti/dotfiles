@@ -1,6 +1,7 @@
 # Install scout, the indexed code search that Neovim's grep keys use in indexed repos
-# (config/nvim/lua/plugins/scout.lua). One checkout of scout's main branch, in
-# ${XDG_DATA_HOME:-~/.local/share}/scout, serves both halves: each run fast-forwards it,
+# (config/nvim/lua/plugins/scout.lua). One checkout of scout's main branch, in this repo's
+# modules/scout (git-ignored, so deleting the dotfiles folder deletes it too), serves both
+# halves: each run fast-forwards it,
 # cargo builds the binary from it, and Neovim loads the plugin's Lua from the same folder, so
 # the two always match. A rerun with no new commits takes a second. A scout binary that this
 # step did not install (another package manager, or your own `cargo install --path` build
@@ -9,8 +10,7 @@
 ##### scout install #####
 block_start scout
 scout_repo='https://github.com/Nikhil-Paleti/scout'
-scout_data="${XDG_DATA_HOME:-}"
-scout_dir="${scout_data:-$HOME/.local/share}/scout"
+scout_dir="$DOTFILES_ROOT/modules/scout"
 if [[ -d "$scout_dir/.git" ]]; then
   scout_origin=$(git -C "$scout_dir" remote get-url origin 2>/dev/null || true)
   if [[ "${scout_origin%.git}" != "$scout_repo" ]]; then

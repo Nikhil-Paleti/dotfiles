@@ -43,8 +43,10 @@ printf '%s\n' "$hits"
 scout search --root "$scout_tmp/repo" 'sym:hello_world' | grep -q '^src/a.c:1:.*\[function\]' ||
   { echo 'scout did not find the definition.' >&2; exit 1; }
 # The Neovim plugin loads from install.sh's scout checkout and uses the build in it.
-scout_data="${XDG_DATA_HOME:-}"
-scout_dir="${scout_data:-$HOME/.local/share}/scout"
+scout_dir="$repo/modules/scout"
+# The installed Neovim config knows where this repo is (written by scripts/install/lazyvim.sh).
+grep -Fq "$repo" "$config_home/nvim/lua/dotfiles_root.lua" ||
+  { echo 'The installed Neovim config does not point at this repo.' >&2; exit 1; }
 git -C "$scout_dir" log -1 --format='scout checkout: %h %s'
 cat > "$scout_tmp/check.lua" <<'LUA'
 local plugin, repo = vim.env.SCOUT_PLUGIN, vim.env.SCOUT_REPO
