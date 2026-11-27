@@ -1,55 +1,31 @@
--- Start screen: a pixel-art landscape picked at random each time Neovim starts (see
--- lua/scenes/), this folder's recent files, and the repo's status with its bookmark (jj) or
--- branch (git).
+-- Start screen: a pixel-art landscape from scenery (github.com/Nikhil-Paleti/scenery), picked at
+-- random each time Neovim starts, this folder's recent files, and the repo's status with its
+-- bookmark (jj) or branch (git).
 
--- One landscape and variation per Neovim session, so resizing keeps the same picture.
--- Set vim.g.dashboard_scene to a name from lua/scenes/init.lua to always show that one.
+-- One landscape and variation per Neovim session, picked on the first draw, so resizing keeps
+-- the same picture. Set vim.g.dashboard_scene to a name from require("scenery").names to always
+-- show that one.
 math.randomseed(vim.uv.hrtime())
-local scene_names = require("scenes").names
-local scene_name = scene_names[math.random(#scene_names)]
-local scene_seed = math.random(1, 100000)
+local scene_name, scene_seed
 
--- The scene is drawn with "▀" (upper half block): each character cell shows two pixels, the
--- top one as the text color and the bottom one as the background color.
-local pixel_hl = {} -- "rrggbb_rrggbb" -> highlight group name, created on first use
-
-local function hl_for(top, bottom)
-  local key = string.format("%02x%02x%02x_%02x%02x%02x", top[1], top[2], top[3], bottom[1], bottom[2], bottom[3])
-  local name = pixel_hl[key]
-  if not name then
-    name = "DashboardPixel_" .. key
-    vim.api.nvim_set_hl(0, name, {
-      fg = string.format("#%02x%02x%02x", top[1], top[2], top[3]),
-      bg = string.format("#%02x%02x%02x", bottom[1], bottom[2], bottom[3]),
-    })
-    pixel_hl[key] = name
-  end
-  return name
-end
--- A colorscheme change clears highlight groups; recreate them on the next draw.
-vim.api.nvim_create_autocmd("ColorScheme", {
-  callback = function()
-    pixel_hl = {}
-  end,
-})
-
--- Render the scene at `cols` x `rows` cells and turn it into dashboard lines, merging runs of
--- cells with the same pair of colors.
+-- Render the scene at `cols` x `rows` cells as dashboard lines. Without scenery (not installed
+-- yet, or offline on first start) the header is left empty.
 local function scene_lines(cols, rows)
-  local px = require("scenes").render(vim.g.dashboard_scene or scene_name, cols, rows * 2, scene_seed)
+  local ok, scenery = pcall(require, "scenery")
+  if not ok then
+    return {}
+  end
+  if not scene_name then
+    scene_name = scenery.names[math.random(#scenery.names)]
+    scene_seed = math.random(1, 100000)
+  end
   local lines = {}
-  for r = 0, rows - 1 do
-    local chunks, run, run_hl = {}, "", nil
-    for x = 0, cols - 1 do
-      local hl = hl_for(px[2 * r][x], px[2 * r + 1][x])
-      if hl ~= run_hl and run ~= "" then
-        chunks[#chunks + 1] = { run, hl = run_hl }
-        run = ""
-      end
-      run, run_hl = run .. "▀", hl
+  for r, row in ipairs(scenery.lines(vim.g.dashboard_scene or scene_name, cols, rows, scene_seed)) do
+    local text = {}
+    for i, chunk in ipairs(row) do
+      text[i] = { chunk[1], hl = chunk[2] }
     end
-    chunks[#chunks + 1] = { run, hl = run_hl }
-    lines[#lines + 1] = { text = chunks, align = "center", padding = r == rows - 1 and 1 or 0 }
+    lines[r] = { text = text, align = "center", padding = r == rows and 1 or 0 }
   end
   return lines
 end
@@ -143,6 +119,9 @@ local function in_repo()
 end
 
 return {
+  -- Pure Lua, so lazy.nvim installs and updates it like any other plugin. It loads on the first
+  -- require("scenery") above. No lazy-lock.json entry: a fresh install takes main's latest.
+  { "Nikhil-Paleti/scenery", lazy = true },
   {
     "folke/snacks.nvim",
     opts = {
