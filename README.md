@@ -78,4 +78,4 @@ $link.TargetPath = $kanata; $link.Arguments = "--cfg `"$env:APPDATA\kanata\kanat
 Start-Process $kanata -ArgumentList "--cfg", "`"$env:APPDATA\kanata\kanata.kbd`""
 ```
 
-That starts Kanata now and at every login, as a tray icon. After `install.sh` changes the config, pick Reload in the tray icon's menu. Apps running as administrator don't see the layer unless Kanata also runs as administrator.
+That starts Kanata now and at every login, as a tray icon. Once it's running you can close PowerShell. If the layer ever stops, double-click Kanata in the Startup folder (press Win+R and type `shell:startup`). After `install.sh` changes the config, pick Reload in the tray icon's menu. Apps running as administrator don't see the layer unless Kanata also runs as administrator.
