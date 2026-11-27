@@ -1,5 +1,5 @@
 # Tag every commit on main that passes CI as a dated version, vYYYY.MM.DD.N (UTC), with a GitHub
-# release listing the PRs since the last one. `install.sh --to VERSION` goes back to one.
+# release listing the PRs since the last one.
 name: Release
 
 on:

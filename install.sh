@@ -3,20 +3,17 @@
 # and shell configs. Rerun it to update everything.
 # Usage: bash install.sh [--verbose]   show every command's output (or DOTFILES_VERBOSE=1)
 #        bash install.sh --version     this checkout's version and the last installs here
-#        bash install.sh --to VERSION  go back to a tagged version (or latest) and install it
 # Run as a normal user; system setup may request sudo. Your default shell is unchanged.
 set -euo pipefail
 DOTFILES_ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly DOTFILES_ROOT
-usage() { echo 'Usage: bash install.sh [--verbose] [--to VERSION|latest] | --version | --help' >&2; exit 2; }
+usage() { echo 'Usage: bash install.sh [--verbose] | --version | --help' >&2; exit 2; }
 dotfiles_args=()
-dotfiles_to=''
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -v|--verbose) DOTFILES_VERBOSE=1; dotfiles_args+=("$1") ;;
-    --to) [[ $# -ge 2 && -n "$2" ]] || usage; dotfiles_to=$2; shift ;;
     --version) source "$DOTFILES_ROOT/scripts/version.sh"; dotfiles_show_version; exit 0 ;;
-    -h|--help) sed -n '2,7p' "$DOTFILES_ROOT/install.sh"; exit 0 ;;
+    -h|--help) sed -n '2,6p' "$DOTFILES_ROOT/install.sh"; exit 0 ;;
     *) usage ;;
   esac
   shift
