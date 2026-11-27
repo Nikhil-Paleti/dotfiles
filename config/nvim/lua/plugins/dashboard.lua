@@ -82,6 +82,59 @@ local function header(dashboard)
   return scene_lines(cols, rows)
 end
 
+-- Recent Files: this folder's open buffers first (most recently used first), then files from
+-- earlier sessions, 8 in all with no repeats. vim.v.oldfiles is only read at startup, so without
+-- the buffers, files opened this session would never show. Rebuilt on every open and redraw.
+local recent_limit = 8
+
+-- Order buffers by when they were last entered (buffer info's `lastused` is only to the second).
+local entered, tick = {}, 0
+vim.api.nvim_create_autocmd("BufEnter", {
+  callback = function(ev)
+    tick = tick + 1
+    entered[ev.buf] = tick
+  end,
+})
+
+local function in_dir(file, root)
+  return file:sub(1, #root) == root and file:sub(#root + 1, #root + 1):find("[/\\]") ~= nil
+end
+
+local function recent_files()
+  local root = vim.fs.normalize(vim.fn.getcwd())
+  local items, seen = {}, {}
+  local function add(file)
+    if seen[file] or #items >= recent_limit then
+      return
+    end
+    seen[file] = true
+    items[#items + 1] = { file = file, icon = "file", action = ":e " .. vim.fn.fnameescape(file), autokey = true }
+  end
+
+  local bufs = vim.fn.getbufinfo({ buflisted = 1 })
+  table.sort(bufs, function(a, b)
+    local ea, eb = entered[a.bufnr] or 0, entered[b.bufnr] or 0
+    if ea ~= eb then
+      return ea > eb
+    end
+    return a.lastused > b.lastused
+  end)
+  for _, info in ipairs(bufs) do
+    local file = info.name ~= "" and vim.fs.normalize(info.name) or nil
+    local stat = file and vim.bo[info.bufnr].buftype == "" and vim.uv.fs_stat(file)
+    if stat and stat.type == "file" and in_dir(file, root) then
+      add(file)
+    end
+  end
+  for file in Snacks.dashboard.oldfiles({ filter = { [root] = true } }) do
+    if #items >= recent_limit then
+      break
+    end
+    add(file)
+  end
+  return items
+end
+
 local function in_repo()
   return Snacks.git.get_root() ~= nil
 end
@@ -94,7 +147,7 @@ return {
         sections = {
           header,
           { pane = 2, icon = " ", title = "Recent Files", padding = 1 },
-          { pane = 2, section = "recent_files", cwd = true, limit = 8, indent = 2, padding = 1 },
+          { pane = 2, indent = 2, padding = 1, recent_files },
           { pane = 2, icon = " ", title = "Repo Status", padding = 1, enabled = in_repo },
           {
             pane = 2,
