@@ -1,16 +1,6 @@
--- Where the repo is: the jj bookmark and working-copy change, or the git branch and commit.
--- Shown in the status bar (lua/plugins/lualine.lua); the start screen (lua/plugins/dashboard.lua)
--- uses the same bookmark lookup.
---
---   jj:  icon, "main trtwltsw": nearest bookmark at or below @, then @'s change ID (as in the prompt)
---   git: icon, "main 3bdadc":   current branch, then the short commit
---
--- Without a bookmark or branch only the ID shows; outside a repo nothing does.
---
--- The status bar redraws all the time, so it never runs jj or git itself: it shows the last
--- answer for the buffer's repo, fetched in the background (a few ms) the first time a repo is
--- seen and again on the events below. There is no timer. :BranchRefresh refetches now.
--- jj runs with --ignore-working-copy, so these reads never snapshot or lock the repo.
+-- Status bar repo text: jj's nearest bookmark at or below @ plus @'s change ID, or git's branch
+-- plus short commit. Fetched in the background on the events below, never on redraw (jj with
+-- --ignore-working-copy, so it never snapshots or locks). :BranchRefresh refetches now.
 local M = {}
 
 -- Shared with the start screen.

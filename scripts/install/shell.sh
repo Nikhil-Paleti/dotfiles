@@ -1,117 +1,74 @@
-# Shell extras: Atuin (history search), Starship (prompt), zoxide (z and zi jump to folders
-# you use often), and suggestions plus syntax highlighting: ble.sh for bash,
-# zsh-autosuggestions and zsh-syntax-highlighting for zsh.
-# Their startup lines are added to ~/.bashrc or ~/.zshrc only when missing.
-install_tool "Atuin" atuin
+# Shell extras: Atuin (history), Starship (prompt), zoxide (z and zi), and suggestions plus
+# syntax highlighting (ble.sh for bash, zsh plugins for zsh). Startup lines are added once.
+# shellcheck disable=SC2154 # globals come from files install.sh sources earlier
+install_tools 'Atuin, Starship, zoxide' atuin starship zoxide
 
-##### Atuin agent history #####
-# Record the shell commands AI coding agents run, tagged with the agent's name and hidden from
-# your own Ctrl+R/Up/suggestions (see them with: atuin search --author '$all-agent'). Atuin adds
-# a hook to each installed agent's own config and keeps its other settings; reruns change nothing.
-# Needs Atuin 18.25 or newer. The Homebrew atuin is upgraded above; an older atuin installed
-# another way (Atuin's own installer, cargo, apt) is left alone and this step is skipped.
-block_start "Atuin agent history"
+# Record AI agents' shell commands, tagged and hidden from your own history search (see them with
+# atuin search --author '$all-agent'). Needs Atuin 18.25+; an older non-Homebrew atuin is left alone.
+step 'Atuin agent history'
 if [[ "$(atuin setup --help 2>/dev/null)" != *--agent-history* ]]; then
-  echo "$(atuin --version) at $(command -v atuin) is older than 18.25, which agent history needs; skipped. Upgrade that atuin (or remove it so Homebrew's is used) and rerun."
+  skip "$(atuin --version) at $(command -v atuin) is older than 18.25"
 else
+  agents=()
   for agent in claude:claude-code codex:codex; do
-    if have "${agent%%:*}"; then
-      atuin setup --only --agent-history --agents "${agent#*:}" </dev/null
-    else
-      echo "${agent#*:} is not installed; skipped."
-    fi
+    have "${agent%%:*}" || continue
+    run atuin setup --only --agent-history --agents "${agent#*:}" </dev/null
+    agents+=("${agent#*:}")
   done
+  if [[ ${#agents[@]} -gt 0 ]]; then ok "${agents[*]}"; else skip 'no Claude Code or Codex'; fi
 fi
-block_end "Atuin agent history"
-##### end Atuin agent history #####
-install_tool "Starship" starship
-install_tool "zoxide" zoxide
 
-##### ble.sh install #####
-# bash only: ble.sh is a bash line editor, so zsh users skip it. Not in Homebrew; the author
-# recommends the nightly build over the old tagged releases.
-block_start ble.sh
+# bash only. Not in Homebrew; its author recommends the nightly build.
+step ble.sh
 blesh_dir="${XDG_DATA_HOME:-$HOME/.local/share}/blesh"
-if [[ "${SHELL##*/}" != bash ]]; then
-  echo "Login shell is ${SHELL##*/}, not bash; skipped."
+if [[ "$login_shell" != bash ]]; then
+  skip "shell is $login_shell"
 elif [[ -f "$blesh_dir/ble.sh" ]]; then
-  # Quiet unless it fails: the updater prints download progress.
-  # shellcheck disable=SC2154 # _dotfiles_download_dir is set by scripts/lib/temp.sh
-  if bash "$blesh_dir/ble.sh" --update </dev/null >"$_dotfiles_download_dir/blesh-update.log" 2>&1; then
-    echo "Updated (or already current): $(bash "$blesh_dir/ble.sh" --version | head -n 1)"
-  else
-    cat "$_dotfiles_download_dir/blesh-update.log" >&2
-    echo 'ble.sh update failed.' >&2
-    exit 1
-  fi
+  run bash "$blesh_dir/ble.sh" --update </dev/null
+  blesh_version=$(bash "$blesh_dir/ble.sh" --version | head -n 1)
+  ok "${blesh_version##* }"
 else
   curl -fsSL https://github.com/akinomyoga/ble.sh/releases/download/nightly/ble-nightly.tar.xz \
     -o "$_dotfiles_download_dir/ble-nightly.tar.xz"
   tar -xJf "$_dotfiles_download_dir/ble-nightly.tar.xz" -C "$_dotfiles_download_dir"
-  bash "$_dotfiles_download_dir/ble-nightly/ble.sh" --install "$(dirname "$blesh_dir")"
+  run bash "$_dotfiles_download_dir/ble-nightly/ble.sh" --install "$(dirname "$blesh_dir")"
+  ok installed
 fi
-block_end ble.sh
-##### end ble.sh install #####
 
-##### zsh plugins install #####
-# zsh only: suggestions as you type (Atuin's zsh init makes them come from Atuin) and syntax
-# highlighting, the zsh equivalents of ble.sh. Homebrew formulas without a command, so they
-# are installed and upgraded here rather than through the tool list.
-block_start "zsh plugins"
-if [[ "${SHELL##*/}" != zsh ]]; then
-  echo "Login shell is ${SHELL##*/}, not zsh; skipped."
+# zsh only: the zsh counterparts of ble.sh. Formulas without a command, so not in the tool list.
+step 'zsh plugins'
+if [[ "$login_shell" != zsh ]]; then
+  skip "shell is $login_shell"
 else
   for formula in zsh-autosuggestions zsh-syntax-highlighting; do
     if brew list --formula --versions "$formula" >/dev/null 2>&1; then
-      brew upgrade --formula "$formula"
+      run brew upgrade --formula "$formula"
     else
-      brew install "$formula"
+      run brew install "$formula"
     fi
   done
-  # compinit (added to ~/.zshrc below) rejects completion folders other users can write to and
-  # asks "Ignore insecure directories?" on every new shell; Homebrew's share folder often is.
+  # compinit asks "Ignore insecure directories?" in every new shell when other users can write
+  # to a completion folder, and Homebrew's share folder often allows that.
   chmod -R go-w "$(brew --prefix)/share"
-  echo "Removed group/other write access from $(brew --prefix)/share for compinit."
+  ok
 fi
-block_end "zsh plugins"
-##### end zsh plugins install #####
 
-##### Shell config #####
-block_start "Shell config"
-# Atuin's config: the repo copy replaces the installed one.
+step 'Shell config'
+# The repo's Atuin and Starship configs replace the installed ones.
 atuin_config_dir="${ATUIN_CONFIG_DIR:-$HOME/.atuin}"
 mkdir -p "$atuin_config_dir"
 cp "$DOTFILES_ROOT/config/atuin/config.toml" "$atuin_config_dir/config.toml"
-echo "Atuin config applied: $atuin_config_dir/config.toml"
-
-# Starship's config: the repo copy replaces the installed one.
 starship_config="${STARSHIP_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml}"
 mkdir -p "$(dirname "$starship_config")"
 cp "$DOTFILES_ROOT/config/starship/starship.toml" "$starship_config"
-echo "Starship config applied: $starship_config"
-
-# Shell startup lines: each is appended to ~/.bashrc or ~/.zshrc only if that file doesn't
-# already have it. Nothing else in the rc file is touched.
-add_rc_line() {
-  local rc="$1" pattern="$2" line="$3"
-  if grep -Eq "$pattern" "$rc" 2>/dev/null; then
-    echo "Already in $rc: $line"
-  else
-    mkdir -p "$(dirname "$rc")"
-    printf '\n# Added by dotfiles install.sh\n%s\n' "$line" >> "$rc"
-    echo "Added to $rc: $line"
-  fi
-}
-# Same, but a missing line goes just above the first line matching anchor (and above this
-# installer's comment over it), so a line that must stay last does. With no anchor, it is appended.
-add_rc_line_before() {
-  local rc="$1" pattern="$2" line="$3" anchor="$4" staged
+# Like rc_add, but a missing line goes above the first line matching ANCHOR (and this installer's
+# comment over it), for lines that must stay last. Without the anchor it is appended.
+rc_add_before() {
+  local rc="$1" pattern="$2" line="$3" anchor="$4" staged="$_dotfiles_download_dir/rc-insert"
   if grep -Eq "$pattern" "$rc" 2>/dev/null || ! grep -Eq "$anchor" "$rc" 2>/dev/null; then
-    add_rc_line "$rc" "$pattern" "$line"
+    rc_add "$rc" "$pattern" "$line"
     return
   fi
-  # shellcheck disable=SC2154 # _dotfiles_download_dir is set by scripts/lib/temp.sh
-  staged="$_dotfiles_download_dir/rc-insert"
   ANCHOR="$anchor" LINE="$line" awk '
     { lines[NR] = $0 }
     END {
@@ -123,44 +80,39 @@ add_rc_line_before() {
         print lines[j]
       }
     }' "$rc" >"$staged"
-  # Write through the existing file so its permissions and any symlink stay as they are.
+  # Write through the file so its permissions and any symlink stay.
   cat "$staged" >"$rc"
-  echo "Added to $rc, above the line it must precede: $line"
+  detail "Added to $rc, above $anchor: $line"
+  dotfiles_rc_changes+=("$rc")
 }
-# Single quotes: written literally, expanded when the shell starts.
+editor_pattern='^[[:space:]]*(export[[:space:]]+)?EDITOR='
+# Order matters. Single quotes: written literally, expanded when the shell starts.
 # shellcheck disable=SC2016
-case "${SHELL##*/}" in
+case "$login_shell" in
   bash)
-    # Order matters: load ble.sh, then Atuin (which hooks into ble.sh), Starship and zoxide
-    # (whose docs ask for it at the end), then switch ble.sh on. (Starship added after an
-    # existing ble-attach line still works, but each new terminal's first prompt is the plain
-    # one; zoxide is put above an existing ble-attach line instead.)
-    # Editor for jj, git, gh, crontab, ...: skipped if the rc file already sets EDITOR.
-    add_rc_line "$HOME/.bashrc" '^[[:space:]]*(export[[:space:]]+)?EDITOR=' 'export EDITOR=nvim VISUAL=nvim'
-    add_rc_line "$HOME/.bashrc" 'blesh/ble\.sh' \
+    # ble.sh, then Atuin (which hooks into it), Starship, zoxide (its docs want it near the end),
+    # then ble-attach. zoxide goes above an existing ble-attach line.
+    rc_add "$shell_rc" "$editor_pattern" 'export EDITOR=nvim VISUAL=nvim'
+    rc_add "$shell_rc" 'blesh/ble\.sh' \
       '[[ $- == *i* && -f "${XDG_DATA_HOME:-$HOME/.local/share}/blesh/ble.sh" ]] && source -- "${XDG_DATA_HOME:-$HOME/.local/share}/blesh/ble.sh" --attach=none'
-    add_rc_line "$HOME/.bashrc" 'atuin init bash' 'eval "$(atuin init bash)"'
-    add_rc_line "$HOME/.bashrc" 'starship init bash' 'eval "$(starship init bash)"'
-    add_rc_line_before "$HOME/.bashrc" 'zoxide init' 'eval "$(zoxide init bash)"' 'ble-attach'
-    add_rc_line "$HOME/.bashrc" 'ble-attach' '[[ ! ${BLE_VERSION-} ]] || ble-attach'
+    rc_add "$shell_rc" 'atuin init bash' 'eval "$(atuin init bash)"'
+    rc_add "$shell_rc" 'starship init bash' 'eval "$(starship init bash)"'
+    rc_add_before "$shell_rc" 'zoxide init' 'eval "$(zoxide init bash)"' 'ble-attach'
+    rc_add "$shell_rc" 'ble-attach' '[[ ! ${BLE_VERSION-} ]] || ble-attach'
     ;;
   zsh)
-    zshrc="${ZDOTDIR:-$HOME}/.zshrc"
-    # Order matters: completion setup, suggestions, Atuin (which points suggestions at its
-    # history), Starship, zoxide (after compinit, near the end as its docs ask), and syntax
-    # highlighting last, as its docs require.
-    add_rc_line "$zshrc" '^[[:space:]]*(export[[:space:]]+)?EDITOR=' 'export EDITOR=nvim VISUAL=nvim'
-    add_rc_line "$zshrc" 'compinit' 'autoload -Uz compinit && compinit'
-    add_rc_line "$zshrc" "menu select" "zstyle ':completion:*' menu select"
-    add_rc_line "$zshrc" 'zsh-autosuggestions\.zsh' \
+    # Completion, suggestions, Atuin (which feeds them), Starship, zoxide (after compinit),
+    # and syntax highlighting last, as its docs require.
+    rc_add "$shell_rc" "$editor_pattern" 'export EDITOR=nvim VISUAL=nvim'
+    rc_add "$shell_rc" 'compinit' 'autoload -Uz compinit && compinit'
+    rc_add "$shell_rc" 'menu select' "zstyle ':completion:*' menu select"
+    rc_add "$shell_rc" 'zsh-autosuggestions\.zsh' \
       '[[ -r "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]] && source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"'
-    add_rc_line "$zshrc" 'atuin init zsh' 'eval "$(atuin init zsh)"'
-    add_rc_line "$zshrc" 'starship init zsh' 'eval "$(starship init zsh)"'
-    add_rc_line_before "$zshrc" 'zoxide init' 'eval "$(zoxide init zsh)"' 'zsh-syntax-highlighting\.zsh'
-    add_rc_line "$zshrc" 'zsh-syntax-highlighting\.zsh' \
+    rc_add "$shell_rc" 'atuin init zsh' 'eval "$(atuin init zsh)"'
+    rc_add "$shell_rc" 'starship init zsh' 'eval "$(starship init zsh)"'
+    rc_add_before "$shell_rc" 'zoxide init' 'eval "$(zoxide init zsh)"' 'zsh-syntax-highlighting\.zsh'
+    rc_add "$shell_rc" 'zsh-syntax-highlighting\.zsh' \
       '[[ -r "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && source "$HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"'
     ;;
-  *) echo 'Shell setup supports bash and zsh.' >&2; exit 1 ;;
 esac
-block_end "Shell config"
-##### end Shell config #####
+ok
