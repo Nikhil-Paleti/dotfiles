@@ -1,21 +1,30 @@
 #!/usr/bin/env bash
 # Update this repo, install missing tools, update managed tools, and apply the repo Neovim, Atuin,
 # and shell configs. Rerun it to update everything.
-# Usage: bash install.sh [--verbose]   (or DOTFILES_VERBOSE=1) to show every command's output.
+# Usage: bash install.sh [--verbose]   show every command's output (or DOTFILES_VERBOSE=1)
+#        bash install.sh --version     this checkout's version and the last installs here
+#        bash install.sh --to VERSION  go back to a tagged version (or latest) and install it
 # Run as a normal user; system setup may request sudo. Your default shell is unchanged.
 set -euo pipefail
 DOTFILES_ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 readonly DOTFILES_ROOT
-[[ $# -le 1 ]] || { echo 'Only one argument is supported.' >&2; exit 2; }
-case "${1:-}" in
-  '') ;;
-  -v|--verbose) DOTFILES_VERBOSE=1 ;;
-  -h|--help) sed -n '2,5p' "$DOTFILES_ROOT/install.sh"; exit 0 ;;
-  *) echo 'Usage: bash install.sh [--verbose|--help]' >&2; exit 2 ;;
-esac
+usage() { echo 'Usage: bash install.sh [--verbose] [--to VERSION|latest] | --version | --help' >&2; exit 2; }
+dotfiles_args=()
+dotfiles_to=''
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -v|--verbose) DOTFILES_VERBOSE=1; dotfiles_args+=("$1") ;;
+    --to) [[ $# -ge 2 && -n "$2" ]] || usage; dotfiles_to=$2; shift ;;
+    --version) source "$DOTFILES_ROOT/scripts/version.sh"; dotfiles_show_version; exit 0 ;;
+    -h|--help) sed -n '2,7p' "$DOTFILES_ROOT/install.sh"; exit 0 ;;
+    *) usage ;;
+  esac
+  shift
+done
 # Modules share this process (PATH changes, temp cleanup); run this file, not them.
 source "$DOTFILES_ROOT/scripts/lib/common.sh"
 source "$DOTFILES_ROOT/scripts/platform.sh"
+source "$DOTFILES_ROOT/scripts/version.sh"
 source "$DOTFILES_ROOT/scripts/pull.sh"
 source "$DOTFILES_ROOT/scripts/discover.sh"
 source "$DOTFILES_ROOT/scripts/components.sh"
@@ -36,7 +45,8 @@ source "$DOTFILES_ROOT/scripts/install/shell.sh"
 source "$DOTFILES_ROOT/scripts/install/keyboard.sh"
 source "$DOTFILES_ROOT/scripts/install/lazyvim.sh"
 
-printf '\nDone in %ss.\n' "$SECONDS"
+dotfiles_record_install
+printf '\nDone in %ss (dotfiles %s).\n' "$SECONDS" "$(dotfiles_version)"
 if [[ ${#dotfiles_rc_changes[@]} -gt 0 ]]; then
   changed=$(printf '%s\n' "${dotfiles_rc_changes[@]}" | sort -u | while read -r f; do short_path "$f"; printf ' '; done)
   echo "Added startup lines to ${changed% }. Open a new terminal to load them."

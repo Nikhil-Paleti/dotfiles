@@ -1,0 +1,40 @@
+# Tag every commit on main that passes CI as a dated version, vYYYY.MM.DD.N (UTC), with a GitHub
+# release listing the PRs since the last one. `install.sh --to VERSION` goes back to one.
+name: Release
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Tag and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ -n "$(git tag --points-at "$SHA" -l 'v[0-9]*')" ]; then
+            echo "$SHA already has a version."
+            exit 0
+          fi
+          day=$(date -u +%Y.%m.%d)
+          n=$(( $(git tag -l "v$day.*" | wc -l) + 1 ))
+          tag="v$day.$n"
+          gh release create "$tag" --target "$SHA" --title "$tag" --generate-notes
+          echo "Released $tag at $SHA."
