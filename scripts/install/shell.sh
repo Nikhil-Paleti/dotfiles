@@ -1,7 +1,7 @@
 # Shell extras: Atuin (history), Starship (prompt), zoxide (z and zi), and suggestions plus
 # syntax highlighting (ble.sh for bash, zsh plugins for zsh). Startup lines are added once.
 # shellcheck disable=SC2154 # globals come from files install.sh sources earlier
-install_tools 'Atuin, Starship, zoxide' atuin starship zoxide
+install_tools 'Atuin, Starship, zoxide' "${shell_tools[@]}"
 
 # Record AI agents' shell commands, tagged and hidden from your own history search (see them with
 # atuin search --author '$all-agent'). Needs Atuin 18.25+; an older non-Homebrew atuin is left alone.
@@ -35,17 +35,14 @@ else
   ok installed
 fi
 
-# zsh only: the zsh counterparts of ble.sh. Formulas without a command, so not in the tool list.
+# zsh only: the zsh counterparts of ble.sh, from Homebrew (scripts/update.sh upgrades them).
 step 'zsh plugins'
 if [[ "$login_shell" != zsh ]]; then
   skip "shell is $login_shell"
 else
-  for formula in zsh-autosuggestions zsh-syntax-highlighting; do
-    if brew list --formula --versions "$formula" >/dev/null 2>&1; then
-      run brew upgrade --formula "$formula"
-    else
-      run brew install "$formula"
-    fi
+  brew_installed=$(brew list --formula -1)
+  for item in "${zsh_plugins[@]}"; do
+    grep -qxF -- "${item#*:}" <<<"$brew_installed" || run brew install "${item#*:}"
   done
   # compinit asks "Ignore insecure directories?" in every new shell when other users can write
   # to a completion folder, and Homebrew's share folder often allows that.

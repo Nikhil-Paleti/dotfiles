@@ -23,13 +23,13 @@ source "$DOTFILES_ROOT/scripts/install/homebrew.sh"
 source "$DOTFILES_ROOT/scripts/install/mason-path.sh"
 export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_UPGRADE=1
 source "$DOTFILES_ROOT/scripts/update.sh"
-install_tools 'Core tools' git jj gh curl bazelisk
+install_tools 'Core tools' "${core_tools[@]}"
 source "$DOTFILES_ROOT/scripts/install/neovim.sh"
-install_tools 'Search tools' rg fd lazygit fzf
-install_tools 'Python and Node' python3 uv node npm
+install_tools 'Search tools' "${search_tools[@]}"
+install_tools 'Python and Node' "${language_tools[@]}"
 source "$DOTFILES_ROOT/scripts/install/rust.sh"
 source "$DOTFILES_ROOT/scripts/install/scout.sh"
-install_tools 'Formatters and linters' tree-sitter stylua shfmt shellcheck ruff
+install_tools 'Formatters and linters' "${format_tools[@]}"
 source "$DOTFILES_ROOT/scripts/install/shell.sh"
 source "$DOTFILES_ROOT/scripts/install/keyboard.sh"
 lazy_dir="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/lazy"
