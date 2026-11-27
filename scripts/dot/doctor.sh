@@ -2,7 +2,7 @@
 # anything broken. Reads only; changes nothing. Exits 1 if something is broken.
 # shellcheck disable=SC2154 # globals come from the files sourced below
 dot_doctor() {
-  [[ $# -eq 0 ]] || { echo 'Usage: dot doctor' >&2; return 2; }
+  [[ $# -eq 0 ]] || { echo 'Usage: dot doctor  (dot doctor --help)' >&2; return 2; }
   source "$DOTFILES_ROOT/scripts/lib/common.sh"
   source "$DOTFILES_ROOT/scripts/platform.sh"
   source "$DOTFILES_ROOT/scripts/components.sh"

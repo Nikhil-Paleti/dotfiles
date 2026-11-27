@@ -232,6 +232,11 @@ dot_out=$(cd / && "$SHELL" -ic 'dot version && dot doctor' </dev/null 2>&1) ||
 printf '%s\n' "$dot_out"
 grep -q '^dotfiles ' <<<"$dot_out" || { echo 'dot version printed no version.' >&2; exit 1; }
 grep -qx 'All good.' <<<"$dot_out" || { echo 'dot doctor did not say All good.' >&2; exit 1; }
+help_out=$(bash "$repo/bin/dot" --help)
+for word in update kb doctor version; do
+  grep -qE "^  $word " <<<"$help_out" || { printf '%s\n' "$help_out"; echo "dot --help does not list $word." >&2; exit 1; }
+done
+bash "$repo/bin/dot" kb --help | grep -q '^Usage: dot kb' || { echo 'dot kb --help printed no usage.' >&2; exit 1; }
 if [[ "$(uname -s)" == Linux ]]; then
   kb_out=$(bash "$repo/bin/dot" kb status)
   [[ "$kb_out" == 'Kanata runs on'* ]] || { echo "dot kb status on Linux said: $kb_out" >&2; exit 1; }

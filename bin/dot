@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 # dot: this dotfiles repo from any folder. install.sh links it to ~/.local/bin/dot.
-#   dot update [--verbose]     pull this repo and rerun install.sh
-#   dot kb start|stop|status   the Kanata keyboard layer (dot kb alone is status)
-#   dot doctor                 check each installed piece and say what's broken
-#   dot version                this checkout's version and the last installs here
+# dot --help lists the commands; dot <command> --help explains one.
 set -euo pipefail
 # Follow the ~/.local/bin link back to the repo.
 self=${BASH_SOURCE[0]}
@@ -14,14 +11,59 @@ done
 DOTFILES_ROOT="$(CDPATH='' cd -- "$(dirname -- "$self")/.." && pwd)"
 readonly DOTFILES_ROOT
 
-usage() { sed -n '3,6p' "$DOTFILES_ROOT/bin/dot" | sed 's/^# */  /'; }
+dot_help() {
+  case "${1:-}" in
+    '') cat <<'HELP' ;;
+dot: this dotfiles repo, from any folder.
+
+Usage: dot <command> [options]
+
+Commands:
+  update     pull this repo and rerun the installer
+  kb         start, stop or check the keyboard layer
+  doctor     check each installed piece and say what's broken
+  version    this checkout's version and the last installs here
+  help       this list
+
+dot <command> --help explains one command.
+HELP
+    update) cat <<'HELP' ;;
+Usage: dot update [--verbose]
+
+Pulls this repo, then reruns install.sh, which only changes what is out of date.
+  -v, --verbose   show every command's output
+HELP
+    kb|keyboard) cat <<'HELP' ;;
+Usage: dot kb [status|start|stop]
+
+The Kanata keyboard layer, on the Mac or, from WSL, on Windows.
+  status   say whether Kanata is running now (the default)
+  start    start Kanata
+  stop     stop Kanata until dot kb start or the next restart (Windows: login)
+HELP
+    doctor) cat <<'HELP' ;;
+Usage: dot doctor
+
+Checks each installed piece and says what's broken and how to fix it.
+HELP
+    version) cat <<'HELP' ;;
+Usage: dot version
+
+Shows this checkout's version and the last installs on this machine.
+HELP
+    help) dot_help ;;
+    *) printf 'dot: no help for %s\n\n' "$1" >&2; dot_help >&2; return 2 ;;
+  esac
+}
+is_help() { [[ "${1:-}" == -h || "${1:-}" == --help || "${1:-}" == help ]]; }
+
 cmd=${1:-help}
 [[ $# -eq 0 ]] || shift
 case "$cmd" in
-  update) exec bash "$DOTFILES_ROOT/install.sh" "$@" ;;
-  version|--version|-V) exec bash "$DOTFILES_ROOT/install.sh" --version ;;
-  kb|keyboard) source "$DOTFILES_ROOT/scripts/dot/kb.sh"; dot_kb "$@" ;;
-  doctor) source "$DOTFILES_ROOT/scripts/dot/doctor.sh"; dot_doctor "$@" ;;
-  help|-h|--help) echo 'Usage:'; usage ;;
-  *) printf 'dot: unknown command %s\nUsage:\n' "$cmd" >&2; usage >&2; exit 2 ;;
+  help|-h|--help) dot_help "$@" ;;
+  update) if [[ "${1:-}" == -h || "${1:-}" == --help ]]; then dot_help update; else exec bash "$DOTFILES_ROOT/install.sh" "$@"; fi ;;
+  version|--version|-V) if is_help "${1:-}"; then dot_help version; else exec bash "$DOTFILES_ROOT/install.sh" --version; fi ;;
+  kb|keyboard) if is_help "${1:-}"; then dot_help kb; else source "$DOTFILES_ROOT/scripts/dot/kb.sh"; dot_kb "$@"; fi ;;
+  doctor) if is_help "${1:-}"; then dot_help doctor; else source "$DOTFILES_ROOT/scripts/dot/doctor.sh"; dot_doctor "$@"; fi ;;
+  *) printf 'dot: unknown command %s\n\n' "$cmd" >&2; dot_help >&2; exit 2 ;;
 esac

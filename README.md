@@ -24,6 +24,7 @@ dot update                  # pull this repo and rerun the installer
 dot kb status               # is the keyboard layer running? (also start, stop)
 dot doctor                  # check every piece and say what's broken
 dot version                 # version here and the last installs
+dot --help                  # every command; dot kb --help for one
 ```
 
 `dot kb` asks launchd on the Mac, or Windows from WSL, what's running now.
