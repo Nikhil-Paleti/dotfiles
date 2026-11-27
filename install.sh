@@ -29,6 +29,7 @@ source "$DOTFILES_ROOT/scripts/install/neovim.sh"
 source "$DOTFILES_ROOT/scripts/install/search.sh"
 source "$DOTFILES_ROOT/scripts/install/runtimes.sh"
 source "$DOTFILES_ROOT/scripts/install/rust.sh"
+source "$DOTFILES_ROOT/scripts/install/scout.sh"
 source "$DOTFILES_ROOT/scripts/install/formatters.sh"
 source "$DOTFILES_ROOT/scripts/install/shell.sh"
 echo 'Applying repo configs without backups; local-only edits will be overwritten.'
