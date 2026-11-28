@@ -46,6 +46,7 @@
 (defsrc
   slck caps
   lalt lmet ralt rmet
+  f1   f2   f3   f4   f5   f6   f7   f8   f9   f10  f11  f12
   q    w    e    r    t    y    u    i    o    p
   a    s    d    f    g    h    j    k    l    ;
   z    x    c    v    b    n    m    ,    .    /
@@ -54,6 +55,7 @@
 (deflayer base
   @spc @caps
   @lalt @lmet @ralt @rmet
+  @f1  @f2  @f3  @f4  @f5  @f6  @f7  @f8  @f9  @f10 @f11 @f12
   _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _
   _    _    _    _    _    _    _    _    _    _
@@ -66,6 +68,7 @@
 (deflayer code
   _    _
   _    _    _    _
+  _    _    _    _    _    _    _    _    _    _    _    _
   1    2    3    4    5    6    7    8    9    0
   S-[  S-9  [    S-,  =    left down up   rght S-;
   S-]  S-0  ]    S-.  S-=  S-min min  S-7  S-bksl bksl
@@ -92,4 +95,25 @@
 )
 (platform (win winiov2 wintercept linux)
   (defalias lalt lalt  lmet lmet  ralt ralt  rmet rmet)
+)
+
+;; The top row. The Mac's built-in keyboard sends plain F1-F12; macOS's own keyboard driver
+;; turns them into brightness, volume and the rest, but Kanata reads the keys before that
+;; driver does, so the built-in keyboard does it here: the printed action, or the F key with
+;; fn held (macOS's default, "Use F1, F2, etc. keys as standard function keys" off). Other
+;; keyboards send media keys themselves, so their F keys stay F keys.
+(deftemplate mac-top-row (fkey action)
+  (switch ((and (device-history 1 1) (not (input real fn)))) $action break () $fkey break))
+(platform (macos)
+  (defalias
+    f1  (t! mac-top-row f1  brdn)  f2  (t! mac-top-row f2  brup)
+    f3  (t! mac-top-row f3  mctl)  f4  (t! mac-top-row f4  sls)
+    f5  (t! mac-top-row f5  dtn)   f6  (t! mac-top-row f6  dnd)
+    f7  (t! mac-top-row f7  prev)  f8  (t! mac-top-row f8  pp)
+    f9  (t! mac-top-row f9  next)  f10 (t! mac-top-row f10 mute)
+    f11 (t! mac-top-row f11 vold)  f12 (t! mac-top-row f12 volu)
+  )
+)
+(platform (win winiov2 wintercept linux)
+  (defalias f1 f1  f2 f2  f3 f3  f4 f4  f5 f5  f6 f6  f7 f7  f8 f8  f9 f9  f10 f10  f11 f11  f12 f12)
 )
